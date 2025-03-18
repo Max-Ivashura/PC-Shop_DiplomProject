@@ -1,29 +1,88 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  {% if category %}{{ category.name }} - Каталог{% else %}Все товары{% endif %}
+{% if category %}{{ category.name }} - Каталог{% else %}Все товары{% endif %}
 {% endblock %}
 
 {% block content %}
-  <h1>{% if category %}{{ category.name }}{% else %}Каталог{% endif %}</h1>
+<h1>{% if category %}{{ category.name }}{% else %}Каталог{% endif %}</h1>
 
-  <div class="row">
-    {% for product in products %}
-      <div class="col-md-4 mb-4">
-        <div class="card">
-          <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
-          <div class="card-body">
-            <h5 class="card-title">{{ product.name }}</h5>
-            <p class="card-text">{{ product.price }} ₽</p>
-            <a href="{% url 'product_detail' product.slug %}" class="btn btn-primary">Подробнее</a>
-          </div>
+<!-- Поисковая строка -->
+<div class="mb-4">
+    <form method="get" action="">
+        <div class="input-group">
+            <input type="text" class="form-control" name="search" placeholder="Поиск..."
+                   value="{{ request.GET.search }}">
+            <button class="btn btn-outline-secondary" type="submit">Найти</button>
         </div>
-      </div>
-    {% endfor %}
-  </div>
+    </form>
+</div>
 
-  <!-- Пагинация -->
-  <div class="pagination">
+
+<!-- Список товаров -->
+<div class="row">
+    {% for product in products %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">{{ product.price }} ₽</p>
+                <a href="{% url 'product_detail' product.slug %}" class="btn btn-primary">Подробнее</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Боковая панель фильтров -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header">Фильтры</div>
+            <div class="card-body">
+                <form method="get" action="">
+                    <!-- Цена -->
+                    <div class="mb-3">
+                        <label class="form-label">Цена</label>
+                        <div class="row g-2">
+                            <div class="col">
+                                <input type="number" class="form-control" name="price_min" placeholder="От"
+                                       value="{{ request.GET.price_min }}">
+                            </div>
+                            <div class="col">
+                                <input type="number" class="form-control" name="price_max" placeholder="До"
+                                       value="{{ request.GET.price_max }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Характеристики -->
+                    {% for field in filter.form %}
+                    {% if 'attr_' in field.name %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {% for choice in field.field.choices %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="{{ field.name }}"
+                                   value="{{ choice.0 }}"
+                                   {% if choice.0 in field.value|default_if_none:'' %}checked{% endif %}>
+                            <label class="form-check-label">{{ choice.0 }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-primary">Применить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Пагинация -->
+<div class="pagination">
     <span class="step-links">
       {% if page_obj.has_previous %}
         <a href="?page=1">&laquo; первая</a>
@@ -39,5 +98,5 @@
         <a href="?page={{ page_obj.paginator.num_pages }}">последняя &raquo;</a>
       {% endif %}
     </span>
-  </div>
+</div>
 {% endblock %}
