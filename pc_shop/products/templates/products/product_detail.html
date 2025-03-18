@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }} - Детали{% endblock %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-md-6">
+      <img src="{{ product.image.url }}" class="img-fluid" alt="{{ product.name }}">
+    </div>
+    <div class="col-md-6">
+      <h1>{{ product.name }}</h1>
+      <p>{{ product.price }} ₽</p>
+      <p>{{ product.description }}</p>
+      <a href="#" class="btn btn-success">Добавить в корзину</a>
+    </div>
+  </div>
+
+  <!-- Характеристики -->
+  <div class="mt-4">
+    {% for group, attributes in grouped_attributes %}
+      <h3>{{ group }}</h3>
+      <table class="table table-striped">
+        <tbody>
+          {% for attr in attributes %}
+            <tr>
+              <td>{{ attr.attribute.name }}</td>
+              <td>{{ attr.value }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endfor %}
+  </div>
+{% endblock %}
