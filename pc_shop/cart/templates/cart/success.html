@@ -4,6 +4,6 @@
 
 {% block content %}
   <h1>Спасибо за заказ!</h1>
-  <p>Ваш заказ успешно оформлен. Номер заказа: {{ order.id }}.</p>
+  <p>Ваш заказ успешно оформлен. Номер заказа: <strong>{{ order_id }}</strong>.</p>
   <a href="{% url 'home' %}" class="btn btn-primary">Вернуться на главную</a>
 {% endblock %}

@@ -3,7 +3,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from products.models import Product
 from .utils import CartHandler
-from .models import Order, OrderItem
+from orders.models import Order, OrderItem
 
 @require_POST
 def cart_add(request, product_id):
@@ -23,6 +23,11 @@ def cart_remove(request, product_id):
 def cart_detail(request):
     cart = CartHandler(request)
     return render(request, 'cart/detail.html', {'cart': cart})
+
+def order_success(request):
+    order_id = request.session.get('last_order_id')  # Получаем ID заказа из сессии
+    return render(request, 'cart/success.html', {'order_id': order_id})
+
 
 @login_required
 def checkout(request):
@@ -45,5 +50,8 @@ def checkout(request):
                 quantity=item.quantity
             )
         cart.clear()
+
+        # Сохраняем ID заказа в сессии для страницы успеха
+        request.session['last_order_id'] = order.id
         return redirect('order_success')
     return render(request, 'cart/checkout.html', {'cart': cart})
