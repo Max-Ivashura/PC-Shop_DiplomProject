@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Конфигуратор ПК{% endblock %}
+
+{% block content %}
+  <h1>Собери свой ПК</h1>
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      {% for category, products in components.items %}
+        <div class="col-md-4 mb-4">
+          <h4>{{ category }}</h4>
+          <select class="form-select" name="{{ category }}">
+            {% for product in products %}
+              <option value="{{ product.id }}">{{ product.name }} ({{ product.price }} ₽)</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-primary">Сохранить сборку</button>
+  </form>
+{% endblock %}

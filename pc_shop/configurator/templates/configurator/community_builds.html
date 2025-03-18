@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Сборки сообщества{% endblock %}
+
+{% block content %}
+  <h1>Сборки от пользователей</h1>
+  <div class="row">
+    {% for build in builds %}
+      <div class="col-md-4 mb-4">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">{{ build.name }}</h5>
+            <p class="card-text">{{ build.description|truncatewords:10 }}</p>
+            <a href="{% url 'build_detail' build.id %}" class="btn btn-secondary">Подробнее</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
