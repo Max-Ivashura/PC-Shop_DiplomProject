@@ -1,0 +1,18 @@
+{% spaceless %}
+    {% for key, value in request.GET.items %}
+        {% if key != 'page' %}
+            {% if key == 'sort' %}
+                {% if new_param_key %}
+                    {{ new_param_key }}={{ new_param_value }}&
+                {% else %}
+                    {{ key }}={{ value|urlencode }}&
+                {% endif %}
+            {% else %}
+                {{ key }}={{ value|urlencode }}&
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    {% if new_param_key and new_param_value %}
+        {{ new_param_key }}={{ new_param_value }}
+    {% endif %}
+{% endspaceless %}

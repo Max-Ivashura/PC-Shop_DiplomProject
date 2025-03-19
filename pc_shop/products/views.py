@@ -24,6 +24,15 @@ class ProductListView(FilterView):
     def get_queryset(self):
         queryset = super().get_queryset()
         category_slug = self.kwargs.get('category_slug')
+        sort = self.request.GET.get('sort', '').strip()
+
+        # Применяем сортировку
+        if sort == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort == 'price_desc':
+            queryset = queryset.order_by('-price')
+        elif sort == 'newest':
+            queryset = queryset.order_by('-created_at')
 
         # Фильтрация по категории
         if category_slug:
@@ -39,17 +48,39 @@ class ProductListView(FilterView):
                 Q(name__icontains=search_query) | Q(description__icontains=search_query)
             )
 
-        return queryset
+        return queryset.distinct()  # Избегаем дубликатов
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category'] = self.category
+        context['active_sort'] = self.request.GET.get('sort', 'default')  # Для визуального подтверждения
         return context
 
+    # В представлении для нормализации параметров
     def get_filterset_kwargs(self, filterset_class):
         kwargs = super().get_filterset_kwargs(filterset_class)
-        kwargs['category'] = self.category  # Передаем категорию в фильтр
+
+        # Проверяем, есть ли данные в GET-запросе
+        if 'data' in kwargs and kwargs['data'] is not None:
+            data = kwargs['data'].copy()
+
+            # Удаляем пустые параметры
+            for key in list(data.keys()):
+                if not data[key].strip():
+                    del data[key]
+
+            kwargs['data'] = data
+
+        # Передаем категорию в фильтр
+        kwargs['category'] = self.category
         return kwargs
+
+    def get(self, request, *args, **kwargs):
+        # Удаляем лишние пробелы из параметров
+        if 'sort' in request.GET:
+            request.GET = request.GET.copy()
+            request.GET['sort'] = request.GET['sort'].strip()
+        return super().get(request, *args, **kwargs)
 
 
 class ProductDetailView(DetailView):

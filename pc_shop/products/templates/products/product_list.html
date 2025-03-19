@@ -1,77 +1,112 @@
 {% extends 'base.html' %}
-
+{% load url_helpers %}
 {% block content %}
 <!-- Фильтры и список товаров -->
 <div class="row">
     <!-- Боковая панель фильтров -->
+
     <div class="col-lg-3 mb-4">
-        <div class="filter-sidebar bg-white p-4 rounded shadow-sm">
-            <h5 class="mb-4">Фильтры</h5>
+        <form method="get" action="">
+            <div class="filter-sidebar bg-white p-4 rounded shadow-sm">
+                <h5 class="mb-4">Фильтры</h5>
 
-            <!-- Цена -->
-            <div class="accordion-item mb-3">
-                <h2 class="accordion-header" id="headingPrice">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#collapsePrice">
-                        Цена
-                    </button>
-                </h2>
-                <div id="collapsePrice" class="accordion-collapse collapse show">
-                    <div class="accordion-body">
-                        <div class="row g-2">
-                            <div class="col">
-                                <input type="number" class="form-control" name="price_min" placeholder="От">
-                            </div>
-                            <div class="col">
-                                <input type="number" class="form-control" name="price_max" placeholder="До">
+                <!-- Цена -->
+                <div class="accordion-item mb-3">
+                    <h2 class="accordion-header" id="headingPrice">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapsePrice">
+                            Цена
+                        </button>
+                    </h2>
+                    <div id="collapsePrice" class="accordion-collapse collapse show">
+                        <div class="accordion-body">
+                            <div class="row g-2">
+                                <div class="col">
+                                    <input type="number" class="form-control" name="price_min"
+                                           value="{{ request.GET.price_min|default:'' }}">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" name="price_max"
+                                           value="{{ request.GET.price_max|default:'' }}">
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Характеристики -->
-            {% for field in filter.form %}
-            {% if 'attr_' in field.name %}
-            <div class="accordion-item mb-3">
-                <h2 class="accordion-header" id="heading{{ field.name }}">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#collapse{{ field.name }}">
-                        {{ field.label }}
-                    </button>
-                </h2>
-                <div id="collapse{{ field.name }}" class="accordion-collapse collapse show">
-                    <div class="accordion-body">
-                        {% for choice in field.field.choices %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="{{ field.name }}"
-                                   value="{{ choice.0 }}"
-                                   {% if choice.0 in field.value|default_if_none:'' %}checked{% endif %}>
-                            <label class="form-check-label">{{ choice.0 }}</label>
+
+                <!-- Характеристики -->
+                {% for field in filter.form %}
+                {% if 'attr_' in field.name %}
+                <div class="accordion-item mb-3">
+                    <h2 class="accordion-header" id="heading{{ field.name }}">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapse{{ field.name }}">
+                            {{ field.label }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ field.name }}" class="accordion-collapse collapse show">
+                        <div class="accordion-body">
+                            {% for choice in field.field.choices %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="{{ field.name }}"
+                                       value="{{ choice.0 }}"
+                                       {% if choice.0 in field.value|default_if_none:'' %}checked{% endif %}>
+                                <label class="form-check-label">{{ choice.0 }}</label>
+                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
                 </div>
-            </div>
-            {% endif %}
-            {% endfor %}
+                {% endif %}
+                {% endfor %}
 
-            <button type="submit" class="btn btn-primary w-100">Применить</button>
-        </div>
+                <button type="submit" class="btn btn-primary w-100">Применить</button>
+            </div>
+        </form>
     </div>
+
 
     <!-- Список товаров -->
     <div class="col-lg-9">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3>{% if category %}{{ category.name }}{% else %}Все товары{% endif %}</h3>
-            <div class="btn-group">
-                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                    Сортировать
+            <!-- Блок сортировки -->
+            <!-- Блок сортировки -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Сортировать:
+                    <span id="active-sort-label">
+            {% if request.GET.sort == 'price_asc' %}
+                по возрастанию цены
+            {% elif request.GET.sort == 'price_desc' %}
+                по убыванию цены
+            {% elif request.GET.sort == 'newest' %}
+                новинки
+            {% else %}
+                по умолчанию
+            {% endif %}
+        </span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="?sort=price_asc">Цена: по возрастанию</a></li>
-                    <li><a class="dropdown-item" href="?sort=price_desc">Цена: по убыванию</a></li>
-                    <li><a class="dropdown-item" href="?sort=newest">Новинки</a></li>
+                    <li>
+                        <a class="dropdown-item {% if request.GET.sort == 'price_asc' %}active{% endif %}"
+                           href="?{% url_replace sort='price_asc' %}">
+                            Цена: по возрастанию
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item {% if request.GET.sort == 'price_desc' %}active{% endif %}"
+                           href="?{% url_replace sort='price_desc' %}">
+                            Цена: по убыванию
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item {% if request.GET.sort == 'newest' %}active{% endif %}"
+                           href="?{% url_replace sort='newest' %}">
+                            Новинки
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
