@@ -5,57 +5,16 @@
 <div class="container my-5">
     <h1 class="mb-4">Корзина</h1>
     {% if cart.get_cart_items %}
-        <!-- Таблица товаров -->
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Товар</th>
-                        <th>Количество</th>
-                        <th>Цена за шт.</th>
-                        <th>Итого</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in cart.get_cart_items %}
-                        <tr>
-                            <td>{{ item.product.name }}</td>
-                            <td>
-                                <form action="{% url 'cart_add' item.product.id %}" method="post" class="d-inline">
-                                    {% csrf_token %}
-                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control d-inline-block w-auto">
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary ms-2">Обновить</button>
-                                </form>
-                            </td>
-                            <td>{{ item.product.price }} ₽</td>
-                            <td>{{ item.get_cost }} ₽</td>
-                            <td>
-                                <form action="{% url 'cart_remove' item.product.id %}" method="post" class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="3"><strong>Общая сумма:</strong></td>
-                        <td><strong>{{ cart.get_total_price }} ₽</strong></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-        <!-- Кнопка оформления -->
-        <div class="text-end">
-            <a href="{% url 'checkout' %}" class="btn btn-primary">Оформить заказ</a>
-        </div>
+    <!-- Таблица товаров -->
+    <div class="table-responsive">
+        {% include 'includes/cart_items.html' %}
+    </div>
+    <!-- Кнопка оформления -->
+    <div class="text-end">
+        <a href="{% url 'checkout' %}" class="btn btn-primary">Оформить заказ</a>
+    </div>
     {% else %}
-        <p class="text-center">Ваша корзина пуста.</p>
+    <p class="text-center">Ваша корзина пуста.</p>
     {% endif %}
 </div>
 {% endblock %}

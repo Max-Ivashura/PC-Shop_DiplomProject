@@ -1,0 +1,48 @@
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th>Товар</th>
+        <th>Количество</th>
+        <th>Цена за шт.</th>
+        <th>Итого</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for item in cart.get_cart_items %}
+    <tr>
+        <td>{{ item.product.name }}</td>
+        <td>
+            <div class="input-group">
+                <input type="number"
+                       class="form-control quantity-input"
+                       value="{{ item.quantity }}"
+                       min="1"
+                       data-product-id="{{ item.product.id }}"
+                       id="quantity_{{ item.product.id }}">
+                <button class="btn btn-outline-secondary update-cart-btn">
+                    Обновить
+                </button>
+            </div>
+        </td>
+        <td>{{ item.product.price }} ₽</td>
+        <td>{{ item.get_cost }} ₽</td>
+        <td>
+            <form action="{% url 'cart_remove' item.product.id %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+    <tr>
+        <td colspan="3"><strong>Общая сумма:</strong></td>
+        <td><strong>{{ cart.get_total_price }} ₽</strong></td>
+        <td></td>
+    </tr>
+    </tfoot>
+</table>

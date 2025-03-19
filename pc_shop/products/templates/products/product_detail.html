@@ -46,17 +46,17 @@
         <div class="action-panel sticky-top mt-4">
             <div class="d-grid gap-2">
                 <!-- Кнопка в корзину -->
-                <button class="btn btn-primary btn-lg" onclick="addToCart({{ product.id }})">
+                <button class="btn btn-primary btn-lg add-to-cart" data-product-id="{{ product.id }}">
                     <i class="fas fa-shopping-cart me-2"></i>В корзину
                 </button>
 
                 <!-- Кнопка в список желаний -->
-                <button class="btn btn-outline-secondary btn-lg" onclick="addToWishlist({{ product.id }})">
+                <button class="btn btn-outline-danger btn-lg add-to-wishlist" data-product-id="{{ product.id }}">
                     <i class="fas fa-heart me-2"></i>В список желаний
                 </button>
 
                 <!-- Кнопка сравнения -->
-                <button class="btn btn-outline-info btn-lg" onclick="addToCompare({{ product.id }})">
+                <button class="btn btn-outline-primary btn-lg add-to-compare" data-product-id="{{ product.id }}">
                     <i class="fas fa-balance-scale me-2"></i>Сравнить
                 </button>
             </div>
