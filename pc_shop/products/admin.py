@@ -4,7 +4,7 @@ from .models import Category, Product, AttributeGroup, Attribute, ProductAttribu
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'parent')
+    list_display = ('name','slug', 'parent')
     prepopulated_fields = {'slug': ('name',)}
 
 

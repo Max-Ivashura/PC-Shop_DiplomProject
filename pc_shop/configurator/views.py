@@ -1,6 +1,11 @@
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Build, CompatibilityRule
+from products.models import Product, Category
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from products.models import Product, Category
 
 
@@ -49,3 +54,29 @@ def community_builds(request):
 def build_detail(request, build_id):
     build = get_object_or_404(Build, id=build_id)
     return render(request, 'configurator/build_detail.html', {'build': build})
+
+
+@csrf_exempt
+def get_components(request, category_slug):
+    category = get_object_or_404(Category, slug=category_slug)
+    products = category.products.values('id', 'name', 'price', 'image')
+    return JsonResponse(list(products), safe=False)
+
+
+@csrf_exempt
+def check_compatibility(request):
+    if request.method == 'POST':
+        selected = json.loads(request.body)
+        errors = []
+
+        # Пример проверки сокета CPU и материнской платы
+        cpu = Product.objects.get(id=selected.get('processors'))
+        motherboard = Product.objects.get(id=selected.get('motherboards'))
+
+        cpu_socket = cpu.attributes.get(attribute__name='Сокет').value
+        mb_socket = motherboard.attributes.get(attribute__name='Сокет').value
+
+        if cpu_socket != mb_socket:
+            errors.append('Сокет процессора не совместим с материнской платой')
+
+        return JsonResponse({'errors': errors})
