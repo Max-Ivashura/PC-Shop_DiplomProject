@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<!-- Герой-секция -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 text-white">Собери свой идеальный ПК</h1>
+                <p class="lead text-white">Более 1000 компонентов в наличии. Конфигуратор с проверкой совместимости.</p>
+                <a href="{% url 'configurator' %}" class="btn btn-primary btn-lg">Начать сборку</a>
+            </div>
+            <div class="col-lg-6">
+                <img src="{% static 'images/hero-image.png' %}" alt="Сборка ПК" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Категории -->
+<section class="categories-section py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Популярные категории</h2>
+        <div class="row">
+            <!-- Процессоры -->
+            <div class="col-md-4 mb-4">
+                <a href="{% url 'product_list_by_category' 'protsessory' %}" class="category-card-link">
+                    <div class="category-card">
+                        <i class="fas fa-microchip fa-3x text-primary"></i>
+                        <h4 class="mt-3">Процессоры</h4>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Оперативная память -->
+            <div class="col-md-4 mb-4">
+                <a href="{% url 'product_list_by_category' 'operativnaya-pamyat' %}" class="category-card-link">
+                    <div class="category-card">
+                        <i class="fas fa-memory fa-3x text-success"></i>
+                        <h4 class="mt-3">Оперативная память</h4>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Накопители -->
+            <div class="col-md-4 mb-4">
+                <a href="{% url 'product_list_by_category' 'nakopiteli' %}" class="category-card-link">
+                    <div class="category-card">
+                        <i class="fas fa-hdd fa-3x text-warning"></i>
+                        <h4 class="mt-3">Накопители</h4>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Хиты продаж -->
+<section class="bestsellers-section py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Хиты продаж</h2>
+        <div class="row">
+            {% for product in bestsellers %}
+            <div class="col-md-3 mb-4">
+                <div class="card product-card">
+                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text">{{ product.price }} ₽</p>
+                        <div class="d-grid">
+                            <a href="{% url 'cart_add' product.id %}" class="btn btn-primary">В корзину</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

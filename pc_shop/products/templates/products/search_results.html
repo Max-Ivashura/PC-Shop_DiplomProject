@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Результаты поиска: {{ query }}{% endblock %}
+
+{% block content %}
+  <h1>Результаты поиска: "{{ query }}"</h1>
+  {% if products.exists %}
+    <div class="row">
+      {% for product in products %}
+        <div class="col-md-4 mb-4">
+          <div class="card product-card">
+            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text">{{ product.price }} ₽</p>
+              <a href="{% url 'product_detail' product.slug %}" class="btn btn-primary">Подробнее</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Ничего не найдено.</p>
+  {% endif %}
+{% endblock %}

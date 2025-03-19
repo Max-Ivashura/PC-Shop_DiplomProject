@@ -6,6 +6,14 @@ from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
 
 
+def product_search(request):
+    query = request.GET.get('q')
+    products = Product.objects.filter(
+        Q(name__icontains=query) | Q(description__icontains=query)
+    ) if query else Product.objects.none()
+    return render(request, 'products/search_results.html', {'products': products, 'query': query})
+
+
 class ProductListView(FilterView):
     model = Product
     template_name = 'products/product_list.html'
@@ -42,6 +50,7 @@ class ProductListView(FilterView):
         kwargs = super().get_filterset_kwargs(filterset_class)
         kwargs['category'] = self.category  # Передаем категорию в фильтр
         return kwargs
+
 
 class ProductDetailView(DetailView):
     model = Product

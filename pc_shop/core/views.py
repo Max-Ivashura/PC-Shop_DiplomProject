@@ -1,4 +1,7 @@
+# core/views.py
 from django.shortcuts import render
+from products.models import Product
 
 def home(request):
-    return render(request, 'base.html')
+    bestsellers = Product.objects.order_by('-created_at')[:4]
+    return render(request, 'home.html', {'bestsellers': bestsellers})

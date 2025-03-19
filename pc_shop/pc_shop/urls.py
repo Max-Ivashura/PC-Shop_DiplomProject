@@ -6,9 +6,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
     path('', include('products.urls')),
+    path('accounts/', include('accounts.urls')),
     path('cart/', include('cart.urls')),
     path('profile/', include('user_profile.urls')),
     path('configurator/', include('configurator.urls')),
     path('wishlist/', include('wishlist.urls')),
     path('compare/', include('compare.urls')),
+
 ]

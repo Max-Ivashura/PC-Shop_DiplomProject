@@ -1,0 +1,182 @@
+/* Цвета */
+:root {
+    --primary: #2c3e50;
+    --secondary: #3498db;
+    --light: #f8f9fa;
+    --dark: #212529;
+}
+
+/* Глобальные стили */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.bg-dark-blue {
+    background-color: var(--primary);
+}
+
+.text-primary {
+    color: var(--secondary);
+}
+
+/* Категории */
+.category-card {
+    padding: 2rem;
+    border-radius: 10px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    background: white;
+    height: 100%;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Товары */
+.product-card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.product-card img {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Герой-секция */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    padding: 6rem 0;
+    border-radius: 0 0 50px 50px;
+}
+
+.hero-section h1 {
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+
+.hero-section img {
+    max-width: 400px;
+    margin-left: auto;
+}
+
+/* Футер */
+footer {
+    border-top: 1px solid #3d4a5a;
+}
+
+footer .social-icons a {
+    color: white;
+    margin: 0 0.5rem;
+    font-size: 1.2rem;
+    transition: color 0.3s;
+}
+
+footer .social-icons a:hover {
+    color: var(--secondary);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.bestsellers-section {
+    animation: fadeIn 1s ease-in-out;
+}
+
+/* Формы аутентификации */
+.auth-form {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.auth-form h2 {
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.auth-form .form-control {
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+}
+
+.auth-form .btn {
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-weight: 500;
+}
+
+.auth-form a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.auth-form a:hover {
+    text-decoration: underline;
+}
+
+/* Карточки категорий */
+.category-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.category-card {
+    padding: 2rem;
+    border-radius: 10px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    background: white;
+    height: 100%;
+    position: relative;
+    overflow: hidden; /* Фикс анимации */
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    z-index: 1; /* Поднятие карточки при ховере */
+}
+
+/* Эффект overlay при наведении */
+.category-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.05);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.category-card:hover::before {
+    opacity: 1;
+}
+
+.categories-section .row {
+    position: relative;
+    z-index: 1;
+}
