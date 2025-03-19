@@ -2,6 +2,7 @@
 {% load url_helpers %}
 {% load product_filters %}
 {% load static %}
+{% block css %} <link rel="stylesheet" href="{% static 'css/catalog.css' %}"> {% endblock %}
 {% block content %}
 <!-- Фильтры и список товаров -->
 <div class="row">

@@ -1,0 +1,125 @@
+/* Цвета */
+:root {
+    --primary: #2c3e50;
+    --secondary: #3498db;
+    --success: #28a745;
+    --danger: #dc3545;
+    --light: #f8f9fa;
+}
+
+/* Карточка авторизации */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+/* Заголовок */
+.card-title {
+    font-weight: 600;
+    color: var(--primary);
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.card-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: var(--secondary);
+    border-radius: 2px;
+}
+
+/* Поля ввода */
+.form-control {
+    border: none;
+    border-radius: 8px;
+    padding: 1.2rem;
+    background: var(--light);
+    transition: box-shadow 0.3s;
+}
+
+.form-control:focus {
+    background: white;
+    box-shadow: 0 0 0 2px var(--secondary);
+    border-color: transparent;
+}
+
+/* Лейблы */
+.form-label {
+    font-weight: 500;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Кнопки */
+.btn-primary,
+.btn-success {
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+    background: #217dbb;
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Ссылки */
+a {
+    color: var(--primary);
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: var(--secondary);
+    text-decoration: underline;
+}
+
+/* Ошибки */
+.text-danger {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
+/* Анимация появления */
+.auth-form {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

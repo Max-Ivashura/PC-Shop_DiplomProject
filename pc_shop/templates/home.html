@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}"> {% endblock %}
 {% block content %}
 <!-- Герой-секция -->
 <section class="hero-section">
@@ -62,10 +64,14 @@
         <div class="row">
             {% for product in bestsellers %}
             <div class="col-md-3 mb-4">
-                <div class="card product-card">
+                <!-- Добавление бейджа "Хит" -->
+                <div class="card product-card position-relative h-100">
+                    <div class="position-absolute top-0 end-0 m-3">
+                        <span class="badge bg-danger">Хит</span>
+                    </div>
                     {% with main_image=product.main_image %}
                     {% if main_image %}
-                    <img src="{{ main_image.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                    <img src="{{ main_image.image.url }}" class="card-img-top h-100" alt="{{ product.name }}">
                     {% endif %}
                     {% endwith %}
                     <div class="card-body">
