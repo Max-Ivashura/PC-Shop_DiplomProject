@@ -63,7 +63,11 @@
             {% for product in bestsellers %}
             <div class="col-md-3 mb-4">
                 <div class="card product-card">
-                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                    {% with main_image=product.main_image %}
+                    {% if main_image %}
+                    <img src="{{ main_image.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                    {% endif %}
+                    {% endwith %}
                     <div class="card-body">
                         <h5 class="card-title">{{ product.name }}</h5>
                         <p class="card-text">{{ product.price }} ₽</p>

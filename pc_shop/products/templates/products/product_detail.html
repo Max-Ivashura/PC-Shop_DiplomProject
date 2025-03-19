@@ -1,46 +1,112 @@
 {% extends 'base.html' %}
-
-{% block title %}{{ product.name }} - Детали{% endblock %}
+{% load static %}
 
 {% block content %}
-<div class="row">
+<!-- Галерея и информация о товаре -->
+<div class="row gx-5">
+    <!-- Левая колонка - Галерея -->
     <div class="col-md-6">
-        <img src="{{ product.image.url }}" class="img-fluid" alt="{{ product.name }}">
-    </div>
-    <div class="col-md-6">
-        <h1>{{ product.name }}</h1>
-        <p>{{ product.price }} ₽</p>
-        <p>{{ product.description }}</p>
-        <form action="{% url 'add_to_compare' product.id %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-outline-primary">Сравнить</button>
-        </form>
-        <form action="{% url 'add_to_wishlist' product.id %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-outline-danger">Добавить в список желаний</button>
-        </form>
-        <form action="{% url 'cart_add' product.id %}" method="post">
-            {% csrf_token %}
-            <input type="number" name="quantity" value="1" min="1" style="width: 60px;">
-            <button type="submit" class="btn btn-success">Добавить в корзину</button>
-        </form>
-    </div>
-</div>
+        <div class="product-gallery">
+            <!-- Основное изображение -->
+            <div class="main-image">
+                {% if main_image %}
+                <img src="{{ main_image.image.url }}" alt="{{ product.name }}"
+                     class="img-fluid rounded" id="mainImage">
+                {% else %}
+                <div class="no-image">Нет изображений</div>
+                {% endif %}
+            </div>
 
-<!-- Характеристики -->
-<div class="mt-4">
-    {% for group, attributes in grouped_attributes %}
-    <h3>{{ group }}</h3>
-    <table class="table table-striped">
-        <tbody>
-        {% for attr in attributes %}
-        <tr>
-            <td>{{ attr.attribute.name }}</td>
-            <td>{{ attr.value }}</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    {% endfor %}
+            <!-- Миниатюры -->
+            <div class="thumbnails mt-3">
+                {% for image in images %}
+                <div class="thumbnail-item">
+                    <img src="{{ image.image.url }}" alt="Миниатюра"
+                         class="img-thumbnail {% if image == main_image %}active{% endif %}"
+                         onclick="changeMainImage('{{ image.image.url }}', this)">
+                </div>
+                {% empty %}
+                <p>Нет дополнительных изображений</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Правая колонка - Описание и действия -->
+    <div class="col-md-6">
+        <h1 class="product-title">{{ product.name }}</h1>
+        <div class="product-price mb-4">
+            <span class="h3 text-primary">{{ product.price }} ₽</span>
+            {% if product.old_price %}
+            <del class="ms-2 text-muted">{{ product.old_price }} ₽</del>
+            {% endif %}
+        </div>
+
+        <!-- Фиксированная панель действий -->
+        <div class="action-panel sticky-top mt-4">
+            <div class="d-grid gap-2">
+                <!-- Кнопка в корзину -->
+                <button class="btn btn-primary btn-lg" onclick="addToCart({{ product.id }})">
+                    <i class="fas fa-shopping-cart me-2"></i>В корзину
+                </button>
+
+                <!-- Кнопка в список желаний -->
+                <button class="btn btn-outline-secondary btn-lg" onclick="addToWishlist({{ product.id }})">
+                    <i class="fas fa-heart me-2"></i>В список желаний
+                </button>
+
+                <!-- Кнопка сравнения -->
+                <button class="btn btn-outline-info btn-lg" onclick="addToCompare({{ product.id }})">
+                    <i class="fas fa-balance-scale me-2"></i>Сравнить
+                </button>
+            </div>
+        </div>
+
+        <!-- Вкладки -->
+        <ul class="nav nav-tabs mt-5" id="productTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="description-tab"
+                        data-bs-toggle="tab" data-bs-target="#description"
+                        type="button" role="tab">Описание
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="specs-tab"
+                        data-bs-toggle="tab" data-bs-target="#specs"
+                        type="button" role="tab">Характеристики
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reviews-tab"
+                        data-bs-toggle="tab" data-bs-target="#reviews"
+                        type="button" role="tab">Отзывы
+                </button>
+            </li>
+        </ul>
+
+        <!-- Контент вкладок -->
+        <div class="tab-content mt-3" id="productTabsContent">
+            <div class="tab-pane fade show active" id="description" role="tabpanel">
+                {{ product.description|safe }}
+            </div>
+            <div class="tab-pane fade" id="specs" role="tabpanel">
+                {% for group, attributes in grouped_attributes %}
+                <div class="card mb-3">
+                    <div class="card-header">{{ group }}</div>
+                    <ul class="list-group list-group-flush">
+                        {% for attr in attributes %}
+                        <li class="list-group-item">
+                            <strong>{{ attr.attribute.name }}:</strong> {{ attr.value }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="tab-pane fade" id="reviews" role="tabpanel">
+                <!-- Форма и список отзывов -->
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

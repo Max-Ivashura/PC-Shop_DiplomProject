@@ -26,6 +26,8 @@ class ProductListView(FilterView):
         category_slug = self.kwargs.get('category_slug')
         sort = self.request.GET.get('sort', '').strip()
 
+        queryset = queryset.prefetch_related('gallery')
+
         # Применяем сортировку
         if sort == 'price_asc':
             queryset = queryset.order_by('price')
@@ -91,9 +93,19 @@ class ProductDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        # Получаем все изображения товара
+        context['images'] = self.object.gallery.all()
+        context['main_image'] = self.object.gallery.filter(is_main=True).first()
+
+        # Если нет главного изображения - берем первое
+        if not context['main_image'] and context['images']:
+            context['main_image'] = context['images'].first()
+
         # Группировка характеристик по группам
         attributes = self.object.attributes.all()
         grouped_attributes = {}
+
         for attr in attributes:
             group_name = attr.attribute.group.name
             if group_name not in grouped_attributes:

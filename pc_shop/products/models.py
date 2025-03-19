@@ -2,6 +2,7 @@ from django.db import models
 from django.db import models
 from django.contrib.auth import get_user_model
 
+
 class Category(models.Model):
     name = models.CharField("Название категории", max_length=255)
     slug = models.SlugField(unique=True)
@@ -33,9 +34,13 @@ class Product(models.Model):
     )
     price = models.DecimalField("Цена", max_digits=10, decimal_places=2)
     description = models.TextField("Описание", blank=True)
-    image = models.ImageField("Изображение", upload_to='products/')
+    images = models.ManyToManyField('ProductImage', blank=True, related_name='products')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def main_image(self):
+        return self.gallery.filter(is_main=True).first() or self.gallery.first()
 
     class Meta:
         verbose_name = "Товар"
@@ -43,6 +48,25 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='gallery')
+    image = models.ImageField(upload_to='products/gallery/')
+    is_main = models.BooleanField(default=False, verbose_name="Главное изображение")
+
+    class Meta:
+        verbose_name = "Изображение товара"
+        verbose_name_plural = "Изображения товаров"
+
+    def __str__(self):
+        return f"Изображение для {self.product.name}"
+
+    def save(self, *args, **kwargs):
+        if self.is_main:
+            # Снимаем статус главного с других изображений
+            ProductImage.objects.filter(product=self.product).update(is_main=False)
+        super().save(*args, **kwargs)
 
 
 class AttributeGroup(models.Model):
@@ -100,7 +124,9 @@ class ProductAttribute(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.attribute.name}: {self.value}"
 
+
 User = get_user_model()
+
 
 class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

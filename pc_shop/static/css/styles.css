@@ -241,8 +241,14 @@ footer .social-icons a:hover {
 
 /* Анимация товаров */
 @keyframes fadeInGrid {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 #product-grid {
@@ -259,4 +265,125 @@ footer .social-icons a:hover {
     margin-left: 5px;
     font-weight: 500;
     color: var(--primary);
+}
+
+/* Детальная страница товара */
+.product-gallery {
+    margin-bottom: 2rem;
+}
+
+.main-image {
+    max-height: 500px;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.thumbnails {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+
+.thumbnail-item {
+    flex: 0 0 auto;
+    width: 80px;
+    height: 80px;
+}
+
+.thumbnail-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+.action-panel {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.product-title {
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.product-price {
+    font-size: 1.25rem;
+}
+
+/* Анимация кнопок */
+.btn-lg {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Вкладки */
+.nav-tabs {
+    border: none;
+}
+
+.nav-link {
+    color: var(--dark);
+    padding: 1rem 1.5rem;
+    border-radius: 10px 10px 0 0;
+    transition: color 0.3s;
+}
+
+.nav-link.active {
+    color: var(--secondary);
+    background: white;
+    border-bottom: 2px solid var(--secondary);
+}
+
+.tab-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.list-group-item {
+    border: none;
+    padding: 0.75rem 0;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .product-gallery {
+        margin-bottom: 1.5rem;
+    }
+
+    .thumbnails {
+        justify-content: center;
+    }
+
+    .action-panel {
+        position: static;
+        margin-top: 1.5rem;
+    }
+}
+
+/* Кнопка сравнения */
+.btn-outline-info {
+    color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+.btn-outline-info:hover {
+    background-color: #17a2b8;
+    color: white;
 }
