@@ -1,82 +1,117 @@
 {% extends 'base.html' %}
-
-{% block title %}Личный кабинет{% endblock %}
-
+{% load static %}
 {% block content %}
-<h1>Личный кабинет</h1>
-<div class="row">
-    <div class="col-md-3">
-        <!-- Меню -->
-        <div class="list-group">
-            <a href="{% url 'profile' %}" class="list-group-item list-group-item-action active">Мой профиль</a>
-            <a href="{% url 'edit_profile' %}" class="list-group-item list-group-item-action">Редактировать данные</a>
-            <a href="{% url 'change_password' %}" class="list-group-item list-group-item-action">Сменить пароль</a>
-            <a href="{% url 'logout' %}" class="list-group-item list-group-item-action">Выйти</a>
+<div class="container my-5">
+    <div class="row">
+        <!-- Меню слева -->
+        <div class="col-lg-3 mb-4">
+            <div class="list-group shadow">
+                <a href="{% url 'profile' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-user me-2"></i> Мой профиль
+                </a>
+                <a href="{% url 'edit_profile' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-pencil-alt me-2"></i> Редактировать данные
+                </a>
+                <a href="{% url 'change_password' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-lock me-2"></i> Сменить пароль
+                </a>
+                <a href="{% url 'wishlist' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-heart me-2"></i> Список желаний
+                </a>
+                <a href="{% url 'community_builds' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-cubes me-2"></i> Мои сборки
+                </a>
+            </div>
         </div>
-    </div>
-    <div class="col-md-9">
-        <!-- Информация о пользователе -->
-        <h3>{{ user.username }}</h3>
-        <p>Email: {{ user.email }}</p>
-        <p>Телефон: {{ user.userprofile.phone }}</p>
-        <p>Адрес: {{ user.userprofile.address }}</p>
 
-        <!-- Заказы -->
-        <h4>Мои заказы</h4>
-        {% if orders %}
-        <table class="table">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Дата</th>
-                <th>Статус</th>
-                <th>Сумма</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for order in orders %}
-            <tr>
-                <td>{{ order.id }}</td>
-                <td>{{ order.created_at }}</td>
-                <td>{{ order.get_status_display }}</td>
-                <td>{{ order.get_total_cost }} ₽</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p>У вас нет заказов.</p>
-        {% endif %}
+        <!-- Основной контент -->
+        <div class="col-lg-9">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Привет, {{ user.username }}!</h3>
 
-        <!-- Сборки -->
-        <h4>Мои сборки</h4>
-        {% with user_builds=request.user.builds.all %}
-        {% if user_builds %}
-        <div class="row">
-            {% for build in user_builds %}
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ build.name }}</h5>
-                        <p class="card-text">{{ build.description|truncatewords:10 }}</p>
-                        <a href="{% url 'build_detail' build.id %}" class="btn btn-secondary">Подробнее</a>
+                    <!-- Блок профиля -->
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <img src="{% static 'images/avatar.png' %}"
+                                 alt="Аватар"
+                                 class="img-fluid rounded-circle mb-3"
+                                 style="width: 150px; height: 150px;">
+                            <p class="text-muted">{{ user.email }}</p>
+                        </div>
+                        <div class="col-md-8">
+                            <h5>Контактные данные</h5>
+                            <p>
+                                <i class="fas fa-phone me-2"></i> {{ user.userprofile.phone|default:'Не указано' }}<br>
+                                <i class="fas fa-map-marker-alt me-2"></i> {{ user.userprofile.address|default:'Не указано' }}
+                            </p>
+                            <a href="{% url 'edit_profile' %}" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i> Редактировать
+                            </a>
+                        </div>
                     </div>
+
+                    <!-- Заказы -->
+                    <hr>
+                    <h4 class="mt-4">Мои заказы</h4>
+                    {% if orders %}
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Дата</th>
+                            <th>Статус</th>
+                            <th>Сумма</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td><a href="#">{{ order.id }}</a></td>
+                            <td>{{ order.created_at|date:"d.m.Y" }}</td>
+                            <td>
+                                        <span class="badge
+                                            {% if order.status == 'processing' %}bg-warning
+                                            {% elif order.status == 'shipped' %}bg-info
+                                            {% elif order.status == 'delivered' %}bg-success
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                            </td>
+                            <td>{{ order.get_total_cost }} ₽</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">У вас еще нет заказов.</p>
+                    {% endif %}
+
+                    <!-- Сборки -->
+                    <hr>
+                    <h4 class="mt-4">Мои сборки</h4>
+                    {% if builds %}
+                    <div class="row">
+                        {% for build in builds %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ build.name }}</h5>
+                                    <p class="card-text">{{ build.description|truncatewords:10 }}</p>
+                                    <a href="{% url 'build_detail' build.id %}" class="btn btn-sm btn-outline-primary">
+                                        Подробнее
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">У вас нет сохраненных сборок.</p>
+                    {% endif %}
                 </div>
             </div>
-            {% endfor %}
         </div>
-        {% else %}
-        <p>У вас нет сохраненных сборок.</p>
-        {% endif %}
-        {% endwith %}
-
-        <!-- Отзывы -->
-        <h4>Мои отзывы</h4>
-        {% if reviews %}
-        <!-- Вывод отзывов -->
-        {% else %}
-        <p>У вас нет отзывов.</p>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

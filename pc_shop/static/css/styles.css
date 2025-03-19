@@ -435,3 +435,56 @@ footer .social-icons a:hover {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
+
+/* Профиль */
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid var(--secondary);
+    margin-bottom: 1rem;
+}
+
+.list-group-item.active {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.list-group-item-action:hover {
+    background-color: #f8f9fa;
+}
+
+.order-status {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+}
+
+.badge {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+}
+
+/* Адаптивность */
+@media (max-width: 992px) {
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+    }
+
+    .list-group {
+        margin-bottom: 2rem;
+    }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.badge:not(.bg-secondary) {
+  animation: pulse 2s infinite;
+}
