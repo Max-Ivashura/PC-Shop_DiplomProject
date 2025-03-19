@@ -34,22 +34,24 @@ def remove_from_comparison(request, product_id):
     return redirect('compare_view')
 
 
+# compare/views.py
 @login_required
 def compare_view(request):
+    # Проверяем, есть ли сравнения у пользователя
     comparison = request.user.comparisons.first()
     products = comparison.products.all() if comparison else []
 
-    # Группировка характеристик
+    # Если товаров нет — перенаправляем
+    if not products:
+        return redirect('product_list')  # Или другая страница
+
+    # Группируем характеристики
     grouped_attributes = {}
     for product in products:
         for pa in product.attributes.select_related('attribute__group').all():
             group_name = pa.attribute.group.name
             attr_name = pa.attribute.name
-            if group_name not in grouped_attributes:
-                grouped_attributes[group_name] = {}
-            if attr_name not in grouped_attributes[group_name]:
-                grouped_attributes[group_name][attr_name] = {}
-            grouped_attributes[group_name][attr_name][product.id] = pa.value
+            grouped_attributes.setdefault(group_name, {}).setdefault(attr_name, {})[product.id] = pa.value
 
     return render(request, 'compare/compare.html', {
         'products': products,

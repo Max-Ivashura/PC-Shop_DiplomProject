@@ -1,0 +1,105 @@
+/* Карточки товаров */
+.product-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 450px; /* Фиксированная высота для выравнивания */
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.product-card .card-img-top {
+    height: 250px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Блок действий */
+.action-block {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+.button-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.price {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Анимация кнопок */
+.btn {
+    transition: transform 0.2s, background-color 0.3s;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+}
+
+/* Фильтры */
+.filter-sidebar {
+    position: sticky;
+    top: 20px;
+}
+
+.accordion-button {
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.accordion-button:not(.collapsed) {
+    background: var(--light);
+}
+
+.accordion-body {
+    border-left: 3px solid var(--primary);
+    padding-left: 1rem;
+}
+
+/* Пагинация */
+.pagination .page-item.active .page-link {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.pagination .page-link {
+    color: var(--primary);
+}
+
+/* Анимация товаров */
+@keyframes fadeInGrid {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#product-grid {
+    animation: fadeInGrid 0.5s ease-out;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .product-card {
+        min-height: auto;
+    }
+
+    .filter-sidebar {
+        position: static;
+    }
+}
