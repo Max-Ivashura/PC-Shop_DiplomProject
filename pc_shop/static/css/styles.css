@@ -180,3 +180,71 @@ footer .social-icons a:hover {
     position: relative;
     z-index: 1;
 }
+
+/* Каталог */
+.product-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.product-image {
+    position: relative;
+    display: block;
+}
+
+.product-image:hover .quick-view {
+    transform: translateY(0);
+}
+
+.price {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Аккордеон фильтров */
+.accordion-button {
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.accordion-button:not(.collapsed) {
+    background: var(--light);
+}
+
+.accordion-body {
+    border-left: 3px solid var(--primary);
+    padding-left: 1rem;
+}
+
+/* Пагинация */
+.pagination .page-item.active .page-link {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.pagination .page-link {
+    color: var(--primary);
+    transition: color 0.3s;
+}
+
+.pagination .page-link:hover {
+    color: var(--secondary);
+}
+
+/* Анимация товаров */
+@keyframes fadeInGrid {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#product-grid {
+    animation: fadeInGrid 0.5s ease-out;
+}

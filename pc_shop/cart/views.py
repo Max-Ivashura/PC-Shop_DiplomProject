@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from products.models import Product
 from .utils import CartHandler
 from orders.models import Order, OrderItem
+from django.http import JsonResponse
 
 @require_POST
 def cart_add(request, product_id):
@@ -11,7 +12,10 @@ def cart_add(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     quantity = int(request.POST.get('quantity', 1))
     cart.add(product=product, quantity=quantity)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'total_items': cart.get_cart_items().count()})
     return redirect('cart_detail')
+
 
 @require_POST
 def cart_remove(request, product_id):

@@ -1,67 +1,47 @@
 {% extends 'base.html' %}
 
-{% block title %}
-{% if category %}{{ category.name }} - Каталог{% else %}Все товары{% endif %}
-{% endblock %}
-
 {% block content %}
-<h1>{% if category %}{{ category.name }}{% else %}Каталог{% endif %}</h1>
-
-<!-- Поисковая строка -->
-<div class="mb-4">
-    <form method="get" action="">
-        <div class="input-group">
-            <input type="text" class="form-control" name="search" placeholder="Поиск..."
-                   value="{{ request.GET.search }}">
-            <button class="btn btn-outline-secondary" type="submit">Найти</button>
-        </div>
-    </form>
-</div>
-
-
-<!-- Список товаров -->
+<!-- Фильтры и список товаров -->
 <div class="row">
-    {% for product in products %}
-    <div class="col-md-4 mb-4">
-        <div class="card">
-            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
-            <div class="card-body">
-                <h5 class="card-title">{{ product.name }}</h5>
-                <p class="card-text">{{ product.price }} ₽</p>
-                <a href="{% url 'product_detail' product.slug %}" class="btn btn-primary">Подробнее</a>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
+    <!-- Боковая панель фильтров -->
+    <div class="col-lg-3 mb-4">
+        <div class="filter-sidebar bg-white p-4 rounded shadow-sm">
+            <h5 class="mb-4">Фильтры</h5>
 
-<!-- Боковая панель фильтров -->
-<div class="row">
-    <div class="col-md-3">
-        <div class="card mb-4">
-            <div class="card-header">Фильтры</div>
-            <div class="card-body">
-                <form method="get" action="">
-                    <!-- Цена -->
-                    <div class="mb-3">
-                        <label class="form-label">Цена</label>
+            <!-- Цена -->
+            <div class="accordion-item mb-3">
+                <h2 class="accordion-header" id="headingPrice">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapsePrice">
+                        Цена
+                    </button>
+                </h2>
+                <div id="collapsePrice" class="accordion-collapse collapse show">
+                    <div class="accordion-body">
                         <div class="row g-2">
                             <div class="col">
-                                <input type="number" class="form-control" name="price_min" placeholder="От"
-                                       value="{{ request.GET.price_min }}">
+                                <input type="number" class="form-control" name="price_min" placeholder="От">
                             </div>
                             <div class="col">
-                                <input type="number" class="form-control" name="price_max" placeholder="До"
-                                       value="{{ request.GET.price_max }}">
+                                <input type="number" class="form-control" name="price_max" placeholder="До">
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Характеристики -->
-                    {% for field in filter.form %}
-                    {% if 'attr_' in field.name %}
-                    <div class="mb-3">
-                        <label class="form-label">{{ field.label }}</label>
+            <!-- Характеристики -->
+            {% for field in filter.form %}
+            {% if 'attr_' in field.name %}
+            <div class="accordion-item mb-3">
+                <h2 class="accordion-header" id="heading{{ field.name }}">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse{{ field.name }}">
+                        {{ field.label }}
+                    </button>
+                </h2>
+                <div id="collapse{{ field.name }}" class="accordion-collapse collapse show">
+                    <div class="accordion-body">
                         {% for choice in field.field.choices %}
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="{{ field.name }}"
@@ -71,32 +51,75 @@
                         </div>
                         {% endfor %}
                     </div>
-                    {% endif %}
-                    {% endfor %}
-
-                    <button type="submit" class="btn btn-primary">Применить</button>
-                </form>
+                </div>
             </div>
+            {% endif %}
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary w-100">Применить</button>
         </div>
     </div>
-</div>
 
-<!-- Пагинация -->
-<div class="pagination">
-    <span class="step-links">
-      {% if page_obj.has_previous %}
-        <a href="?page=1">&laquo; первая</a>
-        <a href="?page={{ page_obj.previous_page_number }}">предыдущая</a>
-      {% endif %}
+    <!-- Список товаров -->
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3>{% if category %}{{ category.name }}{% else %}Все товары{% endif %}</h3>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    Сортировать
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?sort=price_asc">Цена: по возрастанию</a></li>
+                    <li><a class="dropdown-item" href="?sort=price_desc">Цена: по убыванию</a></li>
+                    <li><a class="dropdown-item" href="?sort=newest">Новинки</a></li>
+                </ul>
+            </div>
+        </div>
 
-      <span class="current">
-        Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}.
-      </span>
+        <div class="row" id="product-grid">
+            {% for product in products %}
+            <div class="col-md-4 mb-4">
+                <div class="card product-card h-100">
+                    <!-- Простая ссылка на детальную страницу -->
+                    <a href="{% url 'product_detail' product.slug %}">
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                    </a>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text text-muted">{{ product.category }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="price">{{ product.price }} ₽</span>
+                            <button class="btn btn-outline-primary btn-sm add-to-cart"
+                                    data-product-id="{{ product.id }}">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
 
-      {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">следующая</a>
-        <a href="?page={{ page_obj.paginator.num_pages }}">последняя &raquo;</a>
-      {% endif %}
-    </span>
+        <!-- Пагинация -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" tabindex="-1">Назад</a>
+                </li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Вперед</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
 </div>
 {% endblock %}
