@@ -8,5 +8,7 @@ urlpatterns = [
     path('', include('products.urls')),
     path('cart/', include('cart.urls')),
     path('profile/', include('user_profile.urls')),
-    path('', include('configurator.urls')),
+    path('configurator/', include('configurator.urls')),
+    path('wishlist/', include('wishlist.urls')),
+    path('compare/', include('compare.urls')),
 ]

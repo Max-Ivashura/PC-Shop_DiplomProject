@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Сравнение товаров{% endblock %}
+
+{% block content %}
+  <h1>Сравнение товаров</h1>
+  {% if products %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Характеристика</th>
+          {% for product in products %}
+            <th>{{ product.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for group, attrs in grouped_attributes.items %}
+          <tr>
+            <td colspan="{{ products|length|add:1 }}"><strong>{{ group }}</strong></td>
+          </tr>
+          {% for attr_name, values in attrs.items %}
+            <tr>
+              <td>{{ attr_name }}</td>
+              {% for product in products %}
+                <td>{{ values|get_item:product.id }}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Нет товаров для сравнения.</p>
+  {% endif %}
+{% endblock %}

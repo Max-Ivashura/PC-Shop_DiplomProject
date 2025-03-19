@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Список желаемого{% endblock %}
+
+{% block content %}
+  <h1>Мой список желаний</h1>
+  {% if wishlist.products.all %}
+    <div class="row">
+      {% for product in wishlist.products.all %}
+        <div class="col-md-4 mb-4">
+          <div class="card">
+            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text">{{ product.price }} ₽</p>
+              <a href="{% url 'remove_from_wishlist' product.id %}" class="btn btn-danger">Удалить</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Ваш список желаний пуст.</p>
+  {% endif %}
+{% endblock %}
