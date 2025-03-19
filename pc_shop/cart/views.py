@@ -28,9 +28,9 @@ def cart_detail(request):
     cart = CartHandler(request)
     return render(request, 'cart/detail.html', {'cart': cart})
 
-def order_success(request):
-    order_id = request.session.get('last_order_id')  # Получаем ID заказа из сессии
-    return render(request, 'cart/success.html', {'order_id': order_id})
+def order_success(request, order_id):
+    order = Order.objects.get(id=order_id)
+    return render(request, 'cart/success.html', {'order': order})
 
 
 @login_required
@@ -54,8 +54,5 @@ def checkout(request):
                 quantity=item.quantity
             )
         cart.clear()
-
-        # Сохраняем ID заказа в сессии для страницы успеха
-        request.session['last_order_id'] = order.id
-        return redirect('order_success')
+        return redirect('order_success', order_id=order.id)
     return render(request, 'cart/checkout.html', {'cart': cart})
