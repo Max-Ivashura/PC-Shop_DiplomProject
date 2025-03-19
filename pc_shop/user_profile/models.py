@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-# from configurator.models import Build # Если уже создана модель сборок
+from configurator.models import Build # Если уже создана модель сборок
 # from products.models import Review  # Если уже создана модель отзывов
 
 class UserProfile(models.Model):

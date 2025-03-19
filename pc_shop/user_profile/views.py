@@ -4,14 +4,14 @@ from django.contrib.auth.forms import UserChangeForm, PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from .models import UserProfile
 from .forms import UserProfileForm  # Создадим позже
-
+from products.models import Review
 
 @login_required
 def profile(request):
     user = request.user
     orders = user.order_set.all()
-    builds = user.build_set.all()  # Если сборки привязаны к пользователю
-    reviews = user.review_set.all()  # Если есть модель Review
+    builds = user.builds.all()  # Если сборки привязаны к пользователю
+    reviews = Review.objects.filter(user=user)
 
     context = {
         'orders': orders,

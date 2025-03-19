@@ -3,66 +3,80 @@
 {% block title %}Личный кабинет{% endblock %}
 
 {% block content %}
-  <h1>Личный кабинет</h1>
-  <div class="row">
+<h1>Личный кабинет</h1>
+<div class="row">
     <div class="col-md-3">
-      <!-- Меню -->
-      <div class="list-group">
-        <a href="{% url 'profile' %}" class="list-group-item list-group-item-action active">Мой профиль</a>
-        <a href="{% url 'edit_profile' %}" class="list-group-item list-group-item-action">Редактировать данные</a>
-        <a href="{% url 'change_password' %}" class="list-group-item list-group-item-action">Сменить пароль</a>
-        <a href="{% url 'logout' %}" class="list-group-item list-group-item-action">Выйти</a>
-      </div>
+        <!-- Меню -->
+        <div class="list-group">
+            <a href="{% url 'profile' %}" class="list-group-item list-group-item-action active">Мой профиль</a>
+            <a href="{% url 'edit_profile' %}" class="list-group-item list-group-item-action">Редактировать данные</a>
+            <a href="{% url 'change_password' %}" class="list-group-item list-group-item-action">Сменить пароль</a>
+            <a href="{% url 'logout' %}" class="list-group-item list-group-item-action">Выйти</a>
+        </div>
     </div>
     <div class="col-md-9">
-      <!-- Информация о пользователе -->
-      <h3>{{ user.username }}</h3>
-      <p>Email: {{ user.email }}</p>
-      <p>Телефон: {{ user.userprofile.phone }}</p>
-      <p>Адрес: {{ user.userprofile.address }}</p>
+        <!-- Информация о пользователе -->
+        <h3>{{ user.username }}</h3>
+        <p>Email: {{ user.email }}</p>
+        <p>Телефон: {{ user.userprofile.phone }}</p>
+        <p>Адрес: {{ user.userprofile.address }}</p>
 
-      <!-- Заказы -->
-      <h4>Мои заказы</h4>
-      {% if orders %}
+        <!-- Заказы -->
+        <h4>Мои заказы</h4>
+        {% if orders %}
         <table class="table">
-          <thead>
+            <thead>
             <tr>
-              <th>ID</th>
-              <th>Дата</th>
-              <th>Статус</th>
-              <th>Сумма</th>
+                <th>ID</th>
+                <th>Дата</th>
+                <th>Статус</th>
+                <th>Сумма</th>
             </tr>
-          </thead>
-          <tbody>
+            </thead>
+            <tbody>
             {% for order in orders %}
-              <tr>
+            <tr>
                 <td>{{ order.id }}</td>
                 <td>{{ order.created_at }}</td>
                 <td>{{ order.get_status_display }}</td>
                 <td>{{ order.get_total_cost }} ₽</td>
-              </tr>
+            </tr>
             {% endfor %}
-          </tbody>
+            </tbody>
         </table>
-      {% else %}
+        {% else %}
         <p>У вас нет заказов.</p>
-      {% endif %}
+        {% endif %}
 
-      <!-- Сборки -->
-      <h4>Мои сборки</h4>
-      {% if builds %}
-        <!-- Вывод сборок -->
-      {% else %}
+        <!-- Сборки -->
+        <h4>Мои сборки</h4>
+        {% with user_builds=request.user.builds.all %}
+        {% if user_builds %}
+        <div class="row">
+            {% for build in user_builds %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ build.name }}</h5>
+                        <p class="card-text">{{ build.description|truncatewords:10 }}</p>
+                        <a href="{% url 'build_detail' build.id %}" class="btn btn-secondary">Подробнее</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
         <p>У вас нет сохраненных сборок.</p>
-      {% endif %}
+        {% endif %}
+        {% endwith %}
 
-      <!-- Отзывы -->
-      <h4>Мои отзывы</h4>
-      {% if reviews %}
+        <!-- Отзывы -->
+        <h4>Мои отзывы</h4>
+        {% if reviews %}
         <!-- Вывод отзывов -->
-      {% else %}
+        {% else %}
         <p>У вас нет отзывов.</p>
-      {% endif %}
+        {% endif %}
     </div>
-  </div>
+</div>
 {% endblock %}
