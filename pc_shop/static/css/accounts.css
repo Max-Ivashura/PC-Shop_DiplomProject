@@ -1,4 +1,6 @@
-/* Цвета */
+/* accounts.css */
+
+/* Цветовая схема */
 :root {
     --primary: #2c3e50;
     --secondary: #3498db;
@@ -7,7 +9,19 @@
     --light: #f8f9fa;
 }
 
-/* Карточка авторизации */
+/* Базовые стили */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Контейнер форм */
+.auth-form {
+    max-width: 500px;
+    margin: 0 auto;
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Карточка */
 .card {
     border: none;
     border-radius: 15px;
@@ -15,7 +29,7 @@
 }
 
 .card-body {
-    padding: 2rem;
+    padding: 2rem 1.5rem;
 }
 
 /* Заголовок */
@@ -24,6 +38,7 @@
     color: var(--primary);
     position: relative;
     margin-bottom: 2rem;
+    text-align: center;
 }
 
 .card-title::after {
@@ -40,17 +55,19 @@
 
 /* Поля ввода */
 .form-control {
+    width: 100%;
     border: none;
     border-radius: 8px;
     padding: 1.2rem;
     background: var(--light);
-    transition: box-shadow 0.3s;
+    transition: all 0.3s;
+    margin-bottom: 1rem;
 }
 
 .form-control:focus {
     background: white;
     box-shadow: 0 0 0 2px var(--secondary);
-    border-color: transparent;
+    transform: scaleX(1.02);
 }
 
 /* Лейблы */
@@ -62,18 +79,27 @@
 }
 
 /* Кнопки */
-.btn-primary,
-.btn-success {
+.btn {
     border-radius: 8px;
     padding: 1rem 2rem;
     font-weight: 600;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: all 0.2s;
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+.btn-primary {
+    background: var(--secondary);
 }
 
 .btn-primary:hover {
     background: #217dbb;
     transform: translateY(-2px);
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.btn-success {
+    background: var(--success);
 }
 
 .btn-success:hover {
@@ -108,11 +134,7 @@ a:hover {
     100% { transform: translateX(0); }
 }
 
-/* Анимация появления */
-.auth-form {
-    animation: fadeInUp 0.5s ease-out;
-}
-
+/* Анимации */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -121,5 +143,16 @@ a:hover {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 576px) {
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .btn {
+        padding: 0.8rem 1.5rem;
     }
 }
