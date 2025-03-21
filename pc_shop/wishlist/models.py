@@ -6,7 +6,7 @@ User = get_user_model()
 
 class Wishlist(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    products = models.ManyToManyField(Product, related_name='wishlists')
+    products = models.ManyToManyField(Product, blank=True, related_name='wishlists')
 
     def __str__(self):
-        return f"Список желаний {self.user.username}"
+        return f"Wishlist of {self.user.username}"

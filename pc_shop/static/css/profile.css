@@ -1,0 +1,21 @@
+/* Формы профиля */
+.profile-form .card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.profile-form .card-header {
+    border-radius: 10px 10px 0 0;
+    font-weight: 600;
+}
+
+.profile-form .form-control {
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+}
+
+.profile-form label {
+    font-weight: 500;
+    color: #555;
+}

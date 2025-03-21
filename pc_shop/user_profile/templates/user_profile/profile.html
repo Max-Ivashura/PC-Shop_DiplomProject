@@ -28,7 +28,15 @@
         <div class="col-lg-9">
             <div class="card shadow">
                 <div class="card-body">
-                    <h3 class="card-title mb-4">Привет, {{ user.username }}!</h3>
+                    <h3 class="card-title mb-4">
+                        Привет,
+                        {% if user.first_name or user.last_name %}
+                        {{ user.first_name|default:"" }} {{ user.last_name|default:"" }}
+                        {% else %}
+                        {{ user.username }}
+                        {% endif %}
+                        !
+                    </h3>
 
                     <!-- Блок профиля -->
                     <div class="row">
@@ -40,6 +48,19 @@
                             <p class="text-muted">{{ user.email }}</p>
                         </div>
                         <div class="col-md-8">
+                            <h5>Личные данные</h5>
+                            <p>
+                                <i class="fas fa-user me-2"></i>
+                                {{ user.first_name|default:"Имя не указано" }}
+                                {{ user.last_name|default:"Фамилия не указана" }}<br>
+                                <i class="fas fa-envelope me-2"></i> {{ user.email }}<br>
+                                <i class="fas fa-calendar me-2"></i>
+                                {% if user.userprofile.birth_date %}
+                                    {{ user.userprofile.birth_date|date:"d.m.Y" }}
+                                {% else %}
+                                    Дата рождения не указана
+                                {% endif %}
+                            </p>
                             <h5>Контактные данные</h5>
                             <p>
                                 <i class="fas fa-phone me-2"></i> {{ user.userprofile.phone|default:'Не указано' }}<br>

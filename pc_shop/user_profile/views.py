@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserChangeForm, PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from .models import UserProfile
-from .forms import UserProfileForm  # Создадим позже
+from .forms import UserProfileForm, CustomUserForm  # Создадим позже
 from products.models import Review
 
 @login_required
@@ -24,14 +24,14 @@ def profile(request):
 @login_required
 def edit_profile(request):
     if request.method == 'POST':
-        user_form = UserChangeForm(request.POST, instance=request.user)
+        user_form = CustomUserForm(request.POST, instance=request.user)
         profile_form = UserProfileForm(request.POST, instance=request.user.userprofile)
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
             return redirect('profile')
     else:
-        user_form = UserChangeForm(instance=request.user)
+        user_form = CustomUserForm(instance=request.user)
         profile_form = UserProfileForm(instance=request.user.userprofile)
 
     context = {
