@@ -27,29 +27,33 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- В секции навигации -->
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="{% url 'home' %}">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'home' %}">
                         <i class="fas fa-home me-1"></i>Главная
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'product_list' %}">
+                    <a class="nav-link {% if 'catalog' in request.path %}active{% endif %}"
+                       href="{% url 'product_list' %}">
                         <i class="fas fa-list-alt me-1"></i>Каталог
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'community_builds' %}">
+                    <a class="nav-link {% if 'community' in request.path %}active{% endif %}"
+                       href="{% url 'community_builds' %}">
                         <i class="fas fa-cubes me-1"></i>Сборки
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'compare' %}">
+                    <a class="nav-link {% if 'compare' in request.path %}active{% endif %}" href="{% url 'compare' %}">
                         <i class="fas fa-balance-scale me-1"></i>Сравнение
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'wishlist' %}">
+                    <a class="nav-link {% if 'wishlist' in request.path %}active{% endif %}"
+                       href="{% url 'wishlist' %}">
                         <i class="fas fa-heart me-1"></i>Желания
                     </a>
                 </li>
