@@ -9,6 +9,7 @@ class UserProfile(models.Model):
     address = models.CharField("Адрес", max_length=255, blank=True)
     birth_date = models.DateField("Дата рождения", null=True, blank=True)
 
+
     def __str__(self):
         return f"Профиль: {self.user.username}"
 
