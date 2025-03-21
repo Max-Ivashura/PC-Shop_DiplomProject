@@ -10,6 +10,13 @@ from products.models import Product, Category
 
 
 @login_required
+def delete_build(request, build_id):
+    build = get_object_or_404(Build, id=build_id, user=request.user)
+    build.delete()
+    return redirect('user_builds')
+
+
+@login_required
 def configurator(request):
     categories = Category.objects.filter(
         name__in=['Процессоры', 'Видеокарты', 'Материнские платы', 'Оперативная память', 'Блоки питания', 'Накопители',
@@ -47,7 +54,7 @@ def save_build(request):
 
 
 def community_builds(request):
-    builds = Build.objects.filter(is_public=True)
+    builds = Build.objects.filter(is_public=True).exclude(user=request.user)
     return render(request, 'configurator/community_builds.html', {'builds': builds})
 
 

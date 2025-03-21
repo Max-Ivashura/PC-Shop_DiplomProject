@@ -6,6 +6,9 @@ from .models import UserProfile
 from .forms import UserProfileForm, CustomUserForm  # Создадим позже
 from products.models import Review
 
+from configurator.models import Build
+
+
 @login_required
 def profile(request):
     user = request.user
@@ -52,3 +55,8 @@ def change_password(request):
     else:
         form = PasswordChangeForm(request.user)
     return render(request, 'user_profile/change_password.html', {'form': form})
+
+@login_required
+def user_builds(request):
+    user_builds = Build.objects.filter(user=request.user)
+    return render(request, 'user_profile/user_builds.html', {'builds': user_builds})

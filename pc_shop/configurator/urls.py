@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/components/<slug:category_slug>/', views.get_components, name='api_components'),
     path('api/check-compatibility/', views.check_compatibility, name='api_check_compatibility'),
     path('api/save-build/', views.save_build, name='api_save_build'),
+    path('build/delete/<int:build_id>/', views.delete_build, name='delete_build'),
 ]
