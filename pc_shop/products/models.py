@@ -1,12 +1,12 @@
 from django.db import models
 from django.db import models
 from django.contrib.auth import get_user_model
+from mptt.models import MPTTModel, TreeForeignKey
 
-
-class Category(models.Model):
+class Category(MPTTModel):
     name = models.CharField("Название категории", max_length=255)
     slug = models.SlugField(unique=True)
-    parent = models.ForeignKey(
+    parent = TreeForeignKey(
         'self',
         on_delete=models.CASCADE,
         null=True,
@@ -14,6 +14,10 @@ class Category(models.Model):
         related_name='children',
         verbose_name="Родительская категория"
     )
+
+    class MPTTMeta:
+        order_insertion_by = ['name']  # Ключевой параметр для сортировки
+        level_attr = 'mptt_level'  # Добавляем для кастомизации
 
     class Meta:
         verbose_name = "Категория"
@@ -81,6 +85,10 @@ class AttributeGroup(models.Model):
     class Meta:
         verbose_name = "Группа характеристик"
         verbose_name_plural = "Группы характеристик"
+
+    def get_admin_url(self):
+        from django.urls import reverse
+        return reverse('admin:products_attributegroup_change', args=[self.id])
 
     def __str__(self):
         return f"{self.category.name} - {self.name}"

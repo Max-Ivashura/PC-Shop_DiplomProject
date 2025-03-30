@@ -19,7 +19,6 @@ CATEGORY_FIELD_MAP = {
 }
 
 
-@csrf_exempt
 @require_POST
 def save_build(request):
     try:

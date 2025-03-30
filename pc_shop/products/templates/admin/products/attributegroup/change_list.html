@@ -1,0 +1,139 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block result_list %}
+<div class="collapsible-groups">
+    {% for category in categories %}
+    <div class="category-section">
+        <div class="category-header" data-category-id="{{ category.id }}" onclick="toggleGroup({{ category.id }})">
+            <h3>{{ category.name }} ({{ category.attribute_groups|length }})</h3>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="attribute-groups" id="category-{{ category.id }}">
+            {% for group in category.attribute_groups %}
+            <div class="attribute-group-item">
+                {{ group.name }}
+                <a href="{{ group.get_admin_url }}">Редактировать</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    :root {
+        /* Светлая тема по умолчанию */
+        --primary-bg: #ffffff;
+        --text-color: #212529;
+        --border-color: #dee2e6;
+        --link-color: #447e9b;
+    }
+
+    /* Темная тема (data-theme="dark") */
+    html[data-theme="dark"] {
+        --primary-bg: #1a1a1a;
+        --text-color: #e0e0e0;
+        --border-color: #444;
+        --link-color: #6ab0de;
+    }
+
+
+    html[data-theme="auto"] {
+        --primary-bg: #1a1a1a;
+        --text-color: #e0e0e0;
+        --border-color: #444;
+        --link-color: #6ab0de;
+    }
+
+
+    .collapsible-groups {
+        margin: 20px 0;
+    }
+
+    .category-section {
+        margin-bottom: 15px;
+    }
+
+    .category-header {
+        background: var(--primary-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 10px;
+        margin: 5px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.3s, color 0.3s, border-color 0.3s;
+    }
+
+    .attribute-groups {
+        margin-left: 20px;
+        display: block;
+    }
+
+    .category-header.collapsed + .attribute-groups {
+        display: none;
+    }
+
+    .toggle-icon {
+        margin-left: 10px;
+        transition: transform 0.2s;
+        color: var(--text-color);
+    }
+
+    .category-header.collapsed .toggle-icon {
+        transform: rotate(-90deg);
+    }
+
+    .attribute-group-item {
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        margin: 5px 0;
+        background: var(--primary-bg);
+        color: var(--text-color);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background 0.3s, color 0.3s, border-color 0.3s;
+    }
+
+    .attribute-group-item a {
+        color: var(--link-color);
+        text-decoration: none;
+        margin-left: 15px;
+    }
+
+    .attribute-group-item a:hover {
+        text-decoration: underline;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.category-header').forEach(header => {
+            const categoryId = header.getAttribute('data-category-id');
+            const isCollapsed = localStorage.getItem(`category-${categoryId}-collapsed`) === 'true';
+            const group = document.getElementById(`category-${categoryId}`);
+
+            if (isCollapsed) {
+                header.classList.add('collapsed');
+                group.style.display = 'none';
+            }
+        });
+    });
+
+    function toggleGroup(categoryId) {
+        const header = document.querySelector(`[data-category-id="${categoryId}"]`);
+        const group = document.getElementById(`category-${categoryId}`);
+        header.classList.toggle('collapsed');
+        group.style.display = header.classList.contains('collapsed') ? 'none' : 'block';
+        localStorage.setItem(`category-${categoryId}-collapsed`, header.classList.contains('collapsed'));
+    }
+</script>
+{% endblock %}

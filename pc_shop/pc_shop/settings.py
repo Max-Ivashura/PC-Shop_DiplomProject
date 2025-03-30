@@ -1,13 +1,16 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-4yspz9x4o$x($^3%%&=(2mq1#06)zadxh#+onq!&j78=nc#u#='
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-123456789')  # Fallback для разработки
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 INSTALLED_APPS = [
     # Django apps
@@ -30,6 +33,11 @@ INSTALLED_APPS = [
     'community_builds',
     'wishlist',
     'compare',
+
+    # mods
+    'django_extensions',
+    'mptt',
+    'jazzmin',
 ]
 
 MIDDLEWARE = [
