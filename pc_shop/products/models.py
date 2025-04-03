@@ -86,6 +86,9 @@ class AttributeGroup(models.Model):
         verbose_name = "Группа характеристик"
         verbose_name_plural = "Группы характеристик"
 
+    def get_attributes(self):
+        return self.attributes.all()
+
     def get_admin_url(self):
         from django.urls import reverse
         return reverse('admin:products_attributegroup_change', args=[self.id])
@@ -95,6 +98,13 @@ class AttributeGroup(models.Model):
 
 
 class Attribute(models.Model):
+    DATA_TYPE_CHOICES = [
+        ('str', 'Строка'),
+        ('int', 'Целое число'),
+        ('float', 'Десятичное число'),
+        ('bool', 'Да/Нет'),
+    ]
+
     group = models.ForeignKey(
         AttributeGroup,
         on_delete=models.CASCADE,
@@ -102,6 +112,18 @@ class Attribute(models.Model):
         verbose_name="Группа"
     )
     name = models.CharField("Название характеристики", max_length=255)
+    data_type = models.CharField(
+        "Тип данных",
+        max_length=10,
+        choices=DATA_TYPE_CHOICES,
+        default='str'
+    )
+    unit = models.CharField(
+        "Единица измерения",
+        max_length=20,
+        blank=True,
+        null=True
+    )
 
     class Meta:
         verbose_name = "Характеристика"
