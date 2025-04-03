@@ -1,0 +1,9 @@
+ /* Прячем оригинальный label для значения */
+.field-value label {
+    display: none;
+}
+
+/* Стили для контейнера значения */
+.value-field {
+    margin-top: 5px;
+}

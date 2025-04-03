@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -162,11 +163,20 @@ class Attribute(models.Model):
         verbose_name = "Характеристика"
         verbose_name_plural = "Характеристики"
 
+    def get_data_type_display(self):
+        return dict(self.DATA_TYPE_CHOICES).get(self.data_type, '')
+
     def __str__(self):
         return f"{self.group.name} - {self.name}"
 
 
 class ProductAttribute(models.Model):
+    DATA_TYPE_CHOICES = [
+        ('str', 'Строка'),
+        ('int', 'Целое число'),
+        ('float', 'Десятичное число'),
+        ('bool', 'Да/Нет'),
+    ]
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
@@ -180,9 +190,29 @@ class ProductAttribute(models.Model):
     )
     value = models.CharField("Значение", max_length=255)
 
+    @property
+    def typed_value(self):
+        try:
+            if self.attribute.data_type == 'int':
+                return int(self.value)
+            elif self.attribute.data_type == 'float':
+                return float(self.value)
+            elif self.attribute.data_type == 'bool':
+                return self.value.lower() in ['true', '1', 'yes']
+            return self.value
+        except (ValueError, TypeError):
+            return self.value
+
     class Meta:
         verbose_name = "Значение характеристики"
         verbose_name_plural = "Значения характеристик"
+
+    def clean(self):
+        if self.attribute.data_type == 'int' and not self.value.isdigit():
+            raise ValidationError("Введите целое число")
+
+    def get_data_type_display(self):
+        return dict(self.DATA_TYPE_CHOICES).get(self.data_type, '')
 
     def __str__(self):
         return f"{self.product.name} - {self.attribute.name}: {self.value}"
