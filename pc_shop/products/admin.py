@@ -35,13 +35,65 @@ class CategoryAdmin(DraggableMPTTAdmin):
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
+    readonly_fields = ('preview_thumbnail',)
+    fields = ('image', 'preview_thumbnail', 'is_main')
+
+    def preview_thumbnail(self, obj):
+        return obj.preview_thumbnail()
+
+    preview_thumbnail.short_description = "Превью"
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    inlines = [ProductImageInline]
-    list_display = ('name', 'category', 'price')
+    list_display = (
+        'main_image_preview',
+        'name',
+        'category',
+        'price',
+        'quantity_status',
+        'is_available',
+        'created_at'
+    )
+    list_filter = ('category', 'is_available', 'created_at')
+    search_fields = ('name', 'description', 'category__name')
+    readonly_fields = ('main_image_preview', 'created_at', 'updated_at')
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('main_image_preview', 'category', 'name', 'price',)
+        }),
+        ('Инвентаризация', {
+            'fields': ('quantity', 'is_available')
+        }),
+        ('Контент', {
+            'fields': ('description',)
+        }),
+        ('Метаданные', {
+            'fields': ('slug', 'created_at', 'updated_at')
+        }),
+    )
     prepopulated_fields = {'slug': ('name',)}
+    inlines = [ProductImageInline]
+
+    def main_image_preview(self, obj):
+        main_image = obj.main_image
+        if main_image:
+            return format_html(
+                '<img src="{}" style="max-height: 80px; max-width: 80px;" />',
+                main_image.image.url
+            )
+        return "-"
+
+    main_image_preview.short_description = "Главное изображение"
+
+    def quantity_status(self, obj):
+        if obj.quantity == 0:
+            return format_html('<span style="color: red;">Нет в наличии</span>')
+        elif obj.quantity < 10:
+            return format_html(f'<span style="color: orange;">{obj.quantity} шт.</span>')
+        return format_html(f'<span style="color: green;">{obj.quantity} шт.</span>')
+
+    quantity_status.short_description = "Остаток"
 
 
 class AttributeGroupForm(forms.ModelForm):

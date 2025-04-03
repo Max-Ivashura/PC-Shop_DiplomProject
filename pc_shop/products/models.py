@@ -1,6 +1,8 @@
 from django.db import models
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils.html import format_html
+from django.utils.text import slugify
 from mptt.models import MPTTModel, TreeForeignKey
 
 class Category(MPTTModel):
@@ -29,7 +31,12 @@ class Category(MPTTModel):
 
 class Product(models.Model):
     name = models.CharField("Название товара", max_length=255)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(
+        "URL-адрес",
+        unique=True,
+        max_length=255,
+        help_text="Автоматически генерируется из названия"
+    )
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE,
@@ -41,6 +48,17 @@ class Product(models.Model):
     images = models.ManyToManyField('ProductImage', blank=True, related_name='products')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    quantity = models.PositiveIntegerField(
+        "Доступное количество",
+        default=0,
+        help_text="Количество товара на складе"
+    )
+    is_available = models.BooleanField(
+        "Доступен для заказа",
+        default=True,
+        help_text="Отображать ли товар в каталоге"
+    )
+
 
     @property
     def main_image(self):
@@ -49,6 +67,11 @@ class Product(models.Model):
     class Meta:
         verbose_name = "Товар"
         verbose_name_plural = "Товары"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:  # Генерируем только при создании
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -61,10 +84,20 @@ class ProductImage(models.Model):
 
     class Meta:
         verbose_name = "Изображение товара"
-        verbose_name_plural = "Изображения товаров"
+        verbose_name_plural = "Изображения товара"
 
     def __str__(self):
         return f"Изображение для {self.product.name}"
+
+    def preview_thumbnail(self):
+        if self.image:
+            return format_html(
+                '<img src="{}" style="max-height: 50px; max-width: 50px;" />',
+                self.image.url
+            )
+        return "-"
+
+    preview_thumbnail.short_description = "Превью"
 
     def save(self, *args, **kwargs):
         if self.is_main:
