@@ -1,0 +1,111 @@
+/* Все стили изолированы через .checkout-container */
+.checkout-container {
+    --form-bg: #ffffff;
+    --input-bg: #f8f9fa;
+    --success-bg: #d4edda;
+    --error-bg: #f8d7da;
+    --shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* Основные элементы */
+.checkout-container .container {
+    max-width: 1200px;
+}
+
+.checkout-container h1 {
+    color: var(--dark);
+    font-weight: 700;
+    animation: fadeInDown 0.5s ease;
+}
+
+/* Форма оформления */
+.checkout-container .checkout-form {
+    background: var(--form-bg);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+}
+
+.checkout-container .form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    background: var(--input-bg);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.checkout-container .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.2);
+    background: white;
+}
+
+.checkout-container .invalid-feedback {
+    color: var(--danger);
+    margin-top: 0.25rem;
+}
+
+.checkout-container .checkout-btn {
+    background: var(--primary);
+    border: none;
+    padding: 12px 30px;
+    font-weight: 600;
+    transition: transform 0.3s;
+}
+
+.checkout-container .checkout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Блок заказа */
+.checkout-container .order-summary {
+    background: var(--form-bg);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    min-height: 300px;
+}
+
+.checkout-container .order-items {
+    border: none;
+    border-radius: 10px;
+}
+
+.checkout-container .list-group-item {
+    border: none;
+    padding: 1.25rem;
+    transition: background 0.3s;
+}
+
+.checkout-container .list-group-item:hover {
+    background: var(--light);
+}
+
+.checkout-container .total {
+    border-top: 2px solid var(--primary);
+    font-weight: 600;
+    color: var(--dark);
+}
+
+/* Анимации */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .checkout-container .row {
+        flex-direction: column-reverse;
+    }
+
+    .checkout-container .col-md-6 {
+        margin-bottom: 2rem;
+    }
+}
