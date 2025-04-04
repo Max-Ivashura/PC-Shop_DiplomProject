@@ -136,9 +136,12 @@
     padding: 10px;
     background: var(--primary);
     border: none;
+    color: white !important;
+    font-weight: 600;
 }
 
 .home-page-container .product-card .btn:hover {
+    color: white !important;
     background: var(--secondary);
 }
 
@@ -150,4 +153,8 @@
 
 .home-page-container .bestsellers-section {
     animation: fadeInUp 1s ease;
+}
+
+.hero-section .btn-primary {
+    color: white !important; /* Для кнопки "Начать сборку" */
 }

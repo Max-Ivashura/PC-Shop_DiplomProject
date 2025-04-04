@@ -1,1 +1,4 @@
 /pc_shop/.env
+migrations/
+staticfiles/
+media/
