@@ -1,0 +1,96 @@
+/* Все стили изолированы через .search-results-container */
+.search-results-container {
+    --search-bg: #f8f9fa;
+    --search-border: #e0e0e0;
+    --search-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* Контейнер с результатами */
+.search-results-container .container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* Заголовок */
+.search-results-container h1 {
+    color: var(--dark);
+    font-weight: 700;
+    margin-bottom: 2rem;
+    animation: fadeInDown 0.5s ease;
+}
+
+/* Карточки товаров */
+.search-results-container .product-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--search-shadow);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.search-results-container .product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.search-results-container .card-img-top {
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px 12px 0 0;
+}
+
+/* Блок действий */
+.search-results-container .action-block {
+    border-top: 1px solid var(--search-border);
+    padding-top: 1rem;
+}
+
+.search-results-container .price {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.search-results-container .button-group .btn {
+    border-radius: 5px;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Пустой результат */
+.search-results-container .text-center {
+    min-height: 300px;
+    background: var(--search-bg);
+    border-radius: 12px;
+    box-shadow: var(--search-shadow);
+}
+
+.search-results-container .text-center p {
+    font-size: 1.5rem;
+    color: var(--dark);
+}
+
+/* Анимации */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInGrid {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.search-results-container #product-grid {
+    animation: fadeInGrid 0.5s ease-out;
+}

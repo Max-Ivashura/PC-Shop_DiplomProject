@@ -1,9 +1,9 @@
 .base-template {
-    --primary: #2c3e50;
-    --secondary: #3498db;
-    --success: #4CAF50;
-    --light: #f8f9fa;
-    --dark: #212529;
+    --cfg-primary: #2c3e50;
+    --cfg-secondary: #3498db;
+    --cfg-success: #4CAF50;
+    --cfg-light: #f8f9fa;
+    --cfg-dark: #212529;
     --gray-100: #f0f2f5;
 }
 
@@ -24,12 +24,12 @@
 }
 
 .base-template a {
-    color: var(--primary);
+    color: var(--cfg-primary);
     transition: color 0.3s;
 }
 
 .base-template a:hover {
-    color: var(--secondary);
+    color: var(--cfg-secondary);
 }
 
 .base-template .btn {
@@ -39,19 +39,19 @@
 
 .base-template .btn-primary {
     color: white !important;
-    background: var(--primary);
+    background: var(--cfg-primary);
     border: none;
 }
 
 .base-template .btn-primary:hover {
     color: white !important;
-    background: var(--secondary);
+    background: var(--cfg-secondary);
     transform: translateY(-2px);
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .base-template .navbar {
-    background: var(--primary) !important;
+    background: var(--cfg-primary) !important;
     padding: 1rem 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -81,7 +81,7 @@
 }
 
 .base-template footer {
-    background: var(--primary);
+    background: var(--cfg-primary);
     color: white;
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
     flex-shrink: 0; /* Предотвращает сжатие футера */
@@ -94,7 +94,7 @@
 }
 
 .base-template .social-icons a:hover {
-    color: var(--secondary);
+    color: var(--cfg-secondary);
 }
 
 .base-template .navbar .nav-link {

@@ -1,0 +1,93 @@
+/* Все стили изолированы через .community-builds-container */
+.community-builds-container {
+    --card-bg: #ffffff;
+    --card-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    --primary-color: #3498db;
+    --spacing: 1.5rem;
+}
+
+.community-builds-container .builds-heading {
+    color: var(--cfg-dark);
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.community-builds-container .builds-heading::after {
+    content: '';
+    display: block;
+    width: 100px;
+    height: 3px;
+    background: var(--primary-color);
+    margin: 1rem auto;
+}
+
+.community-builds-container .builds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing);
+    padding: 0 var(--spacing);
+}
+
+.community-builds-container .build-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s, box-shadow 0.3s;
+    background: var(--card-bg);
+    height: 100%;
+}
+
+.community-builds-container .build-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.community-builds-container .card-title {
+    color: var(--cfg-dark);
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.community-builds-container .card-text {
+    color: var(--cfg-dark);
+    opacity: 0.7;
+    margin-bottom: 1.5rem;
+}
+
+.community-builds-container .btn-view {
+    background: var(--primary-color);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: transform 0.2s;
+}
+
+.community-builds-container .btn-view:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(52,152,219,0.3);
+}
+
+.community-builds-container .build-card-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .community-builds-container .builds-grid {
+        grid-template-columns: 1fr;
+        padding: 0 1rem;
+    }
+
+    .community-builds-container .build-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .community-builds-container .builds-heading {
+        margin-bottom: 2rem;
+    }
+}

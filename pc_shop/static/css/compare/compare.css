@@ -1,0 +1,132 @@
+/* Все стили изолированы через .compare-container */
+.compare-container {
+    --primary-light: #e8f4ff;
+    --success-light: #e8f5e9;
+    --warning-light: #fff3cd;
+    --border-color: #dee2e6;
+    --shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.compare-container .compare-heading {
+    text-align: center;
+    margin-bottom: 3rem;
+    color: var(--cfg-dark);
+    position: relative;
+}
+
+.compare-container .compare-heading::after {
+    content: '';
+    display: block;
+    width: 100px;
+    height: 3px;
+    background: var(--cfg-primary);
+    margin: 1rem auto;
+}
+
+.compare-container .table-responsive {
+    overflow-x: auto;
+    min-height: 300px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+}
+
+.compare-container .compare-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.compare-container .compare-header {
+    background: var(--cfg-primary);
+    color: white;
+    font-weight: 600;
+    padding: 1.5rem;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+}
+
+.compare-container .product-header {
+    background: var(--cfg-light);
+    font-weight: 600;
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.compare-container .product-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.compare-container .remove-btn {
+    color: var(--cfg-danger);
+    font-size: 1.2rem;
+    margin-top: 0.5rem;
+    transition: color 0.3s;
+}
+
+.compare-container .remove-btn:hover {
+    color: #c82333;
+}
+
+.compare-container .group-row {
+    background: var(--primary-light);
+    font-weight: 600;
+    padding: 1rem;
+}
+
+.compare-container .attr-name {
+    background: var(--cfg-light);
+    padding: 1rem;
+    min-width: 250px;
+    border-right: 1px solid var(--border-color);
+}
+
+.compare-container .attr-value {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.compare-container tr.attr-row:nth-child(odd) {
+    background: var(--gray-100);
+}
+
+.compare-container tr.attr-row:hover {
+    background: var(--warning-light);
+    transition: background 0.3s;
+}
+
+.compare-container .empty-compare {
+    text-align: center;
+    padding: 4rem 2rem;
+    border-radius: 15px;
+    background: var(--cfg-light);
+    box-shadow: var(--shadow);
+}
+
+.compare-container .empty-compare .btn {
+    margin-top: 1.5rem;
+    padding: 1rem 3rem;
+    border-radius: 30px;
+    font-weight: 600;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .compare-container .compare-table {
+        min-width: 400px;
+    }
+
+    .compare-container .attr-name {
+        font-size: 0.9rem;
+    }
+
+    .compare-container .product-info {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}

@@ -1,6 +1,6 @@
 /* Герой-секция */
 .home-page-container .hero-section {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    background: linear-gradient(135deg, var(--cfg-primary), var(--cfg-secondary));
     padding: 6rem 2rem;
     border-radius: 0 0 50px 50px;
     position: relative;
@@ -42,7 +42,7 @@
 
 /* Категории */
 .home-page-container .categories-section {
-    background: var(--light);
+    background: var(--cfg-light);
 }
 
 .home-page-container .category-card {
@@ -68,7 +68,7 @@
 }
 
 .home-page-container .category-card h4 {
-    color: var(--dark);
+    color: var(--cfg-dark);
     font-weight: 600;
 }
 
@@ -121,11 +121,11 @@
 
 .home-page-container .product-card h5 {
     font-size: 1.1rem;
-    color: var(--dark);
+    color: var(--cfg-dark);
 }
 
 .home-page-container .product-card p {
-    color: var(--primary);
+    color: var(--cfg-primary);
     font-weight: 600;
     margin-bottom: 1rem;
 }
@@ -134,7 +134,7 @@
     width: 100%;
     border-radius: 8px;
     padding: 10px;
-    background: var(--primary);
+    background: var(--cfg-primary);
     border: none;
     color: white !important;
     font-weight: 600;
@@ -142,7 +142,7 @@
 
 .home-page-container .product-card .btn:hover {
     color: white !important;
-    background: var(--secondary);
+    background: var(--cfg-secondary);
 }
 
 /* Анимация секций */

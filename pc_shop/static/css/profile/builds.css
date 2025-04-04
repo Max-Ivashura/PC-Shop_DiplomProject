@@ -1,12 +1,12 @@
 .builds-page-container {
     --card-bg: #ffffff;
     --card-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    --primary-btn-bg: var(--primary);
+    --primary-btn-bg: var(--cfg-primary);
     --danger-btn-bg: #e74c3c;
 }
 
 .builds-page-container h1 {
-    color: var(--dark);
+    color: var(--cfg-dark);
     margin-bottom: 2rem;
     font-weight: 700;
 }
@@ -40,13 +40,13 @@
 }
 
 .builds-page-container .card-title {
-    color: var(--dark);
+    color: var(--cfg-dark);
     font-size: 1.25rem;
     margin-bottom: 1rem;
 }
 
 .builds-page-container .card-text {
-    color: var(--dark);
+    color: var(--cfg-dark);
     opacity: 0.7;
     margin-bottom: 1.5rem;
 }

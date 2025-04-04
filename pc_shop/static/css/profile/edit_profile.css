@@ -18,7 +18,7 @@
 .edit-profile-container .card-header {
     font-weight: 600;
     border-radius: 12px 12px 0 0;
-    background: var(--light);
+    background: var(--cfg-light);
 }
 
 .edit-profile-container .form-control {
@@ -30,19 +30,19 @@
 }
 
 .edit-profile-container .form-control:focus {
-    border-color: var(--primary);
+    border-color: var(--cfg-primary);
     box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.2);
     background: white;
 }
 
 .edit-profile-container label {
     font-weight: 500;
-    color: var(--dark);
+    color: var(--cfg-dark);
     margin-bottom: 0.5rem;
 }
 
 .edit-profile-container .form-error {
-    color: var(--danger);
+    color: var(--cfg-danger);
     font-size: 0.875rem;
     margin-top: 0.25rem;
 }
