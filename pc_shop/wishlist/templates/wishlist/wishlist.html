@@ -1,25 +1,60 @@
 {% extends 'base.html' %}
-
+{% load static %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/wishlist/wishlist.css' %}">
+{% endblock %}
 {% block title %}Список желаемого{% endblock %}
 
 {% block content %}
-  <h1>Мой список желаний</h1>
-  {% if wishlist.products.all %}
-    <div class="row">
-      {% for product in wishlist.products.all %}
-        <div class="col-md-4 mb-4">
-          <div class="card">
-            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
-            <div class="card-body">
-              <h5 class="card-title">{{ product.name }}</h5>
-              <p class="card-text">{{ product.price }} ₽</p>
-              <a href="{% url 'remove_from_wishlist' product.id %}" class="btn btn-danger">Удалить</a>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
+<!-- Добавляем уникальный контейнер -->
+<div class="wishlist-page-container">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} mt-3">
+        {{ message }}
     </div>
-  {% else %}
-    <p>Ваш список желаний пуст.</p>
-  {% endif %}
+    {% endfor %}
+    {% endif %}
+    <h1 class="wishlist-heading">Мой список желаний</h1>
+
+    {% if wishlist.products.all %}
+    <div class="wishlist-grid">
+        {% for product in wishlist.products.all %}
+        <div class="wishlist-item">
+            <div class="card product-card mx-auto">
+                <div class="product-image-wrapper">
+                    {% with main_image=product.main_image %}
+                    {% if main_image %}
+                    <img src="{{ main_image.image.url }}"
+                         class="card-img-top product-image"
+                         alt="{{ product.name }}">
+                    {% else %}
+                    <img src="{% static 'images/placeholder.png' %}"
+                         class="card-img-top product-image"
+                         alt="Заглушка">
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title product-name">{{ product.name }}</h5>
+                    <p class="card-text product-price">{{ product.price }} ₽</p>
+                    <div class="product-actions">
+                        <a href="{% url 'remove_from_wishlist' product.id %}" class="btn btn-remove">
+                            <i class="fas fa-trash-alt"></i> Удалить
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-wishlist">
+        <p class="empty-message">Ваш список желаний пуст.</p>
+        <a href="{% url 'product_list' %}" class="btn btn-primary btn-explore">
+            <i class="fas fa-shopping-bag"></i> Посмотреть товары
+        </a>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
