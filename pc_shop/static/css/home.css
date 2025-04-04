@@ -1,5 +1,5 @@
 /* Герой-секция */
-.hero-section {
+.home-page-container .hero-section {
     background: linear-gradient(135deg, var(--primary), var(--secondary));
     padding: 6rem 2rem;
     border-radius: 0 0 50px 50px;
@@ -7,7 +7,7 @@
     overflow: hidden;
 }
 
-.hero-section h1 {
+.home-page-container .hero-section h1 {
     font-size: 2.5rem;
     font-weight: 700;
     color: white;
@@ -15,37 +15,37 @@
     animation: fadeInLeft 1s ease;
 }
 
-.hero-section p {
+.home-page-container .hero-section p {
     font-size: 1.25rem;
     color: white;
     max-width: 500px;
     animation: fadeInRight 1s ease;
 }
 
-.hero-section .btn {
+.home-page-container .hero-section .btn {
     margin-top: 2rem;
     padding: 12px 30px;
     font-size: 1rem;
     animation: bounceIn 1s ease 0.5s;
 }
 
-.hero-section img {
+.home-page-container .hero-section img {
     max-width: 500px;
     animation: float 3s ease-in-out infinite;
 }
 
 /* Анимации героя */
-@keyframes float {
+.home-page-container @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-15px); }
 }
 
 /* Категории */
-.categories-section {
+.home-page-container .categories-section {
     background: var(--light);
 }
 
-.category-card {
+.home-page-container .category-card {
     background: white;
     border-radius: 15px;
     padding: 2rem;
@@ -56,23 +56,23 @@
     overflow: hidden;
 }
 
-.category-card:hover {
+.home-page-container .category-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
 }
 
-.category-card i {
+.home-page-container .category-card i {
     font-size: 3rem;
     margin-bottom: 1rem;
     transition: color 0.3s;
 }
 
-.category-card h4 {
+.home-page-container .category-card h4 {
     color: var(--dark);
     font-weight: 600;
 }
 
-.category-card::before {
+.home-page-container .category-card::before {
     content: '';
     position: absolute;
     top: 0;
@@ -84,53 +84,53 @@
     transition: opacity 0.3s;
 }
 
-.category-card:hover::before {
+.home-page-container .category-card:hover::before {
     opacity: 1;
 }
 
 /* Хиты продаж */
-.bestsellers-section {
+.home-page-container .bestsellers-section {
     background: var(--gray-100);
 }
 
-.product-card {
+.home-page-container .product-card {
     background: white;
     border-radius: 15px;
     overflow: hidden;
     transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.product-card:hover {
+.home-page-container .product-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-.product-card img {
+.home-page-container .product-card img {
     height: 200px;
     object-fit: cover;
     transition: transform 0.3s;
 }
 
-.product-card:hover img {
+.home-page-container .product-card:hover img {
     transform: scale(1.05);
 }
 
-.product-card .card-body {
+.home-page-container .product-card .card-body {
     padding: 1.5rem;
 }
 
-.product-card h5 {
+.home-page-container .product-card h5 {
     font-size: 1.1rem;
     color: var(--dark);
 }
 
-.product-card p {
+.home-page-container .product-card p {
     color: var(--primary);
     font-weight: 600;
     margin-bottom: 1rem;
 }
 
-.product-card .btn {
+.home-page-container .product-card .btn {
     width: 100%;
     border-radius: 8px;
     padding: 10px;
@@ -138,16 +138,16 @@
     border: none;
 }
 
-.product-card .btn:hover {
+.home-page-container .product-card .btn:hover {
     background: var(--secondary);
 }
 
 /* Анимация секций */
-@keyframes fadeInUp {
+.home-page-container @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-.bestsellers-section {
+.home-page-container .bestsellers-section {
     animation: fadeInUp 1s ease;
 }
