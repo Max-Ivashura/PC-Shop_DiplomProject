@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'core',
+    'catalog_config',
     'products',
     'cart',
     'orders',

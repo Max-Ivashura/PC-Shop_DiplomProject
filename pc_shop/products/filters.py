@@ -1,6 +1,7 @@
 import django_filters
+from .models import Product, ProductAttribute
+from catalog_config.models import AttributeGroup
 import django.forms
-from .models import Product, AttributeGroup, Attribute, ProductAttribute
 
 
 class ProductFilter(django_filters.FilterSet):

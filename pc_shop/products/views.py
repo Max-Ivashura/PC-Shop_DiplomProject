@@ -1,9 +1,10 @@
 from .filters import ProductFilter
-from .models import Product, Category
+from .models import Product
 from django.db.models import Q
 from django_filters.views import FilterView
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
+from catalog_config.models import Category
 
 
 def product_search(request):
