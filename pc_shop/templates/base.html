@@ -68,6 +68,7 @@
                     </div>
                 </form>
                 <!-- Кнопка корзины -->
+                <span class="cart-icon">
                 <a href="{% url 'cart_detail' %}" class="btn btn-light position-relative me-2">
                     <i class="fas fa-shopping-cart"></i>
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -75,17 +76,18 @@
                         <span class="visually-hidden">товаров в корзине</span>
                     </span>
                 </a>
+                </span>
                 <div class="dropdown">
                     <button class="btn btn-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown">
                         <i class="fas fa-user"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                         {% if user.is_authenticated %}
-                        <li><a class="dropdown-item" href="{% url 'profile' %}">Профиль</a></li>
-                        <li><a class="dropdown-item" href="{% url 'logout' %}">Выход</a></li>
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Профиль</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Выход</a></li>
                         {% else %}
-                        <li><a class="dropdown-item" href="{% url 'login' %}">Вход</a></li>
-                        <li><a class="dropdown-item" href="{% url 'register' %}">Регистрация</a></li>
+                            <li><a class="dropdown-item" href="{% url 'login' %}">Вход</a></li>
+                            <li><a class="dropdown-item" href="{% url 'register' %}">Регистрация</a></li>
                         {% endif %}
                     </ul>
                 </div>
@@ -93,6 +95,17 @@
         </div>
     </div>
 </header>
+
+<!-- Вывод уведомлений -->
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 
 <!-- Основной контент -->
 <main class="container py-5 flex-grow-1">

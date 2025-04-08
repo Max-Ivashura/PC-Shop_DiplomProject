@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Заказ оформлен{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'cart/css/success.css' %}">
+{% endblock %}
+{% block content %}
+<!-- Уникальный контейнер для изоляции стилей -->
+<div class="success-container">
+    <div class="container text-center my-5">
+        <div class="card shadow-lg p-5 bg-light success-card">
+            <div class="success-icon">
+                <i class="fas fa-check-circle fa-3x text-success"></i>
+            </div>
+            <h2 class="mt-4 success-title">Заказ оформлен!</h2>
+            <p class="lead success-message">
+                Номер вашего заказа: <strong>{{ order.id }}</strong>.<br>
+                Спасибо за покупку!
+            </p>
+            <a href="{% url 'home' %}" class="btn btn-primary success-btn">
+                <i class="fas fa-home me-2"></i>Вернуться на главную
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

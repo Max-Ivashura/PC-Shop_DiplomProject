@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'compare/css/compare.css' %}">
+{% endblock %}
+{% block title %}Сравнение товаров{% endblock %}
+
+{% block content %}
+<div class="compare-container">
+  <h1 class="compare-heading">Сравнение товаров</h1>
+
+  {% if products %}
+    <div class="table-responsive">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th class="compare-header">Характеристика</th>
+            {% for product in products %}
+              <th class="product-header">
+                <div class="product-info">
+                  <span>{{ product.name }}</span>
+                  <a href="{% url 'remove_from_compare' product.id %}" class="remove-btn">×</a>
+                </div>
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for group, attrs in grouped_attributes.items %}
+            <tr class="group-row">
+              <td colspan="{{ products|length|add:1 }}">{{ group }}</td>
+            </tr>
+            {% for attr_name, values in attrs.items %}
+              <tr class="attr-row">
+                <td class="attr-name">{{ attr_name }}</td>
+                {% for product in products %}
+                  <td class="attr-value">{{ values|get_item:product.id }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-compare">
+      <p>Нет товаров для сравнения.</p>
+      <a href="{% url 'product_list' %}" class="btn btn-primary">Перейти в каталог</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

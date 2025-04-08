@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static 'products/css/product_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="product-detail-container">
+        <div class="row gx-5">
+            <!-- Левая колонка - Галерея -->
+            <div class="col-md-6">
+                <div class="product-gallery">
+                    <!-- Основное изображение -->
+                    <div class="main-image">
+                        {% if main_image %}
+                            <img src="{{ main_image.image.url }}" alt="{{ product.name }}"
+                                 class="img-fluid rounded" id="mainImage">
+                        {% else %}
+                            <div class="no-image">Нет изображений</div>
+                        {% endif %}
+                    </div>
+                    <div class="thumbnails d-flex gap-2 mt-3">
+                        {% for image in product.gallery.all %}
+                            <div class="thumbnail-item {% if forloop.first %}active{% endif %}"
+                                 onclick="changeMainImage('{{ image.image.url }}', this)">
+                                <img src="{{ image.image_thumbnail.url }}" class="img-thumbnail">
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Правая колонка - Описание и действия -->
+            <div class="col-md-6">
+                <h1 class="product-title">{{ product.name }}</h1>
+                <div class="product-price mb-4">
+                    <span class="h3 text-primary">{{ product.price }} ₽</span>
+                    {% if product.old_price %}
+                        <del class="ms-2 text-muted">{{ product.old_price }} ₽</del>
+                    {% endif %}
+                </div>
+
+                <!-- Фиксированная панель действий -->
+                <div class="action-panel sticky-top mt-4">
+                    <div class="d-grid gap-3">
+                        <!-- Кнопка в корзину -->
+                        <button class="btn btn-primary btn-lg add-to-cart w-100"
+                                data-product-id="{{ product.id }}">
+                            <i class="fas fa-shopping-cart me-2"></i>В корзину
+                        </button>
+
+                        <div class="d-grid gap-2">
+                            <!-- Кнопка в список желаний -->
+                            <button class="btn btn-outline-danger btn-lg w-100 add-to-wishlist"
+                                    data-product-id="{{ product.id }}">
+                                <i class="fas fa-heart me-2"></i>В список желаний
+                            </button>
+
+                            <!-- Кнопка сравнения -->
+                            <button class="btn btn-outline-primary btn-lg w-100 add-to-compare"
+                                    data-product-id="{{ product.id }}">
+                                <i class="fas fa-balance-scale me-2"></i>Сравнить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладки -->
+                <ul class="nav nav-tabs mt-5" id="productTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="description-tab"
+                                data-bs-toggle="tab" data-bs-target="#description"
+                                type="button" role="tab">Описание
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="specs-tab"
+                                data-bs-toggle="tab" data-bs-target="#specs"
+                                type="button" role="tab">Характеристики
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reviews-tab"
+                                data-bs-toggle="tab" data-bs-target="#reviews"
+                                type="button" role="tab">Отзывы
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Контент вкладок -->
+                <div class="tab-content mt-3" id="productTabsContent">
+                    <div class="tab-pane fade show active" id="description" role="tabpanel">
+                        {{ product.description|safe }}
+                    </div>
+                    <div class="tab-pane fade" id="specs" role="tabpanel">
+                        {% for group, attributes in grouped_attributes %}
+                            <div class="specs-group">
+                                <h5 class="border-bottom pb-2 mb-3">{{ group }}</h5>
+                                <ul class="specs-list">
+                                    {% for attr in attributes %}
+                                        <li class="specs-item">
+                                            <strong>{{ attr.attribute.name }}:</strong> {{ attr.value }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="tab-pane fade" id="reviews" role="tabpanel">
+                        <!-- Форма и список отзывов -->
+                        <div class="mt-4">
+                            <h4>Оставьте отзыв</h4>
+                            <form>
+                                <div class="mb-3">
+                                    <textarea class="form-control" rows="3" placeholder="Ваш отзыв..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Отправить</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Скрипты для галереи -->
+    <script>
+        function changeMainImage(url, element) {
+            document.getElementById('mainImage').src = url;
+            // Удаляем активный класс у всех миниатюр
+            document.querySelectorAll('.thumbnail-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            // Добавляем активный класс текущей миниатюре
+            element.parentElement.classList.add('active');
+        }
+    </script>
+{% endblock %}

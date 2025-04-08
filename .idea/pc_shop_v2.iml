@@ -1,10 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="PYTHON_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="django" name="Django">
+      <configuration>
+        <option name="rootFolder" value="$MODULE_DIR$/pc_shop" />
+        <option name="settingsModule" value="pc_shop/settings.py" />
+        <option name="manageScript" value="manage.py" />
+        <option name="environment" value="&lt;map/&gt;" />
+        <option name="doNotUseTestRunner" value="false" />
+        <option name="trackFilePattern" value="" />
+      </configuration>
+    </facet>
+  </component>
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <excludeFolder url="file://$MODULE_DIR$/pc_shop/catalog_config/migrations" />
+      <sourceFolder url="file://$MODULE_DIR$/pc_shop/apps" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/pc_shop/apps/catalog_config/migrations" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.13 (.globalvenv)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="TemplatesService">
+    <option name="TEMPLATE_CONFIGURATION" value="Django" />
   </component>
 </module>

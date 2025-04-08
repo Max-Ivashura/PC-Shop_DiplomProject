@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Результаты поиска: {{ query }}{% endblock %}
+{% load static %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'products/css/product_list.css' %}">
+<link rel="stylesheet" href="{% static 'products/css/search_results.css' %}">
+{% endblock %}
+{% block content %}
+<!-- Добавляем уникальный контейнер -->
+<div class="search-results-container">
+    <div class="container">
+        <h1 class="mb-4">Результаты поиска: "{{ query }}"</h1>
+
+        {% if products.exists %}
+        <div class="row" id="product-grid">
+            {% for product in products %}
+            <div class="col-md-4 mb-4">
+                {% include 'products/includes/product_card.html' %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <p>Ничего не найдено.</p>
+            <a href="{% url 'home' %}" class="btn btn-primary">Вернуться на главную</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

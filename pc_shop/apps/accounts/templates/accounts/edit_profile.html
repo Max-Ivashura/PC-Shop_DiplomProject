@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static 'accounts/css/edit_profile.css' %}">
+{% endblock %}
+{% block title %}Редактировать профиль{% endblock %}
+
+{% block content %}
+    <form method="post" class="edit-profile-form" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="edit-profile-container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <!-- Блок аватарки -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex align-items-center">
+                            <i class="fas fa-user-circle me-2"></i> Аватар
+                        </div>
+                        <div class="card-body text-center">
+                            <!-- Текущая аватарка -->
+                            <div class="avatar-preview mb-3">
+                                <label for="id_avatar">
+                                    <img src="{% if user.userprofile.avatar %}{{ user.userprofile.avatar.url }}{% else %}{% static 'images/avatar.png' %}{% endif %}"
+                                         alt="Аватар"
+                                         class="rounded-circle avatar-img">
+                                </label>
+                            </div>
+
+                            <!-- Поле загрузки -->
+                            <div class="mb-3">
+                                <label for="{{ profile_form.avatar.id_for_label }}" class="form-label visually-hidden">
+                                    Выберите аватар
+                                </label>
+                                {{ profile_form.avatar }}
+                                {% if profile_form.avatar.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.avatar.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-text text-muted small">
+                                Поддерживаемые форматы: JPG, JPEG, PNG. Максимальный размер: 5 МБ
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Общая ошибка формы -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger mb-4">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" class="edit-profile-form">
+                        {% csrf_token %}
+
+                        <!-- Основные данные -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light d-flex align-items-center">
+                                <i class="fas fa-user me-2"></i> Основная информация
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <!-- Имя -->
+                                    <div class="col-md-6">
+                                        <label for="{{ user_form.first_name.id_for_label }}" class="form-label">
+                                            Имя
+                                            {% if user_form.first_name.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ user_form.first_name }}
+                                        {% if user_form.first_name.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ user_form.first_name.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Фамилия -->
+                                    <div class="col-md-6">
+                                        <label for="{{ user_form.last_name.id_for_label }}" class="form-label">
+                                            Фамилия
+                                            {% if user_form.last_name.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ user_form.last_name }}
+                                        {% if user_form.last_name.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ user_form.last_name.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Email -->
+                                    <div class="col-12">
+                                        <label for="{{ user_form.email.id_for_label }}" class="form-label">
+                                            Email
+                                            {% if user_form.email.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ user_form.email }}
+                                        {% if user_form.email.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ user_form.email.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Контактные данные -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light d-flex align-items-center">
+                                <i class="fas fa-address-book me-2"></i> Контактная информация
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <!-- Телефон -->
+                                    <div class="col-md-6">
+                                        <label for="{{ profile_form.phone.id_for_label }}" class="form-label">
+                                            Телефон
+                                        </label>
+                                        {{ profile_form.phone }}
+                                        {% if profile_form.phone.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ profile_form.phone.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Дата рождения -->
+                                    <div class="col-md-6">
+                                        <label for="{{ profile_form.birth_date.id_for_label }}" class="form-label">
+                                            Дата рождения
+                                        </label>
+                                        {{ profile_form.birth_date }}
+                                        {% if profile_form.birth_date.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ profile_form.birth_date.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Адрес -->
+                                    <div class="col-12">
+                                        <label for="{{ profile_form.address.id_for_label }}" class="form-label">
+                                            Адрес
+                                        </label>
+                                        {{ profile_form.address }}
+                                        {% if profile_form.address.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ profile_form.address.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-save me-2"></i> Сохранить изменения
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/inputmask@5.0.6/dist/jquery.inputmask.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Маска для телефона
+            $('#id_phone').inputmask({
+                mask: '+7 (999) 999-99-99',
+                placeholder: '_',
+                clearMaskOnLostFocus: true,
+                showMaskOnHover: true,
+                removeMaskOnSubmit: true
+            });
+
+            // Предпросмотр аватарки
+            $('#id_avatar').on('change', function (e) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    $('.avatar-preview img').attr('src', e.target.result);
+                };
+
+                if (file) {
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Корзина{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'cart/css/detail.css' %}">
+{% endblock %}
+{% block content %}
+<!-- Уникальный контейнер для изоляции стилей -->
+<div class="cart-container">
+    <div class="container my-5">
+        <h1 class="mb-4">Корзина</h1>
+        {% if cart.get_cart_items %}
+        <div class="table-responsive cart-table">
+            {% include 'includes/cart_items.html' %}
+        </div>
+        <div class="text-end mt-4">
+            <a href="{% url 'checkout' %}" class="btn btn-primary checkout-btn">
+                <i class="fas fa-shopping-bag me-2"></i>Оформить заказ
+            </a>
+        </div>
+        {% else %}
+        <div class="empty-cart text-center py-5">
+            <p class="lead">Ваша корзина пуста.</p>
+            <a href="{% url 'product_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-store me-2"></i>Перейти в каталог
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
