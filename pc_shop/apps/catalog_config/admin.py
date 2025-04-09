@@ -1,153 +1,179 @@
 from django.contrib import admin
-from django.http import JsonResponse
-from django.urls import path
+from django.db.models import Count
+from django.http import HttpResponseRedirect
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from mptt.admin import DraggableMPTTAdmin
-from django.db import models
-from mptt.forms import TreeNodeChoiceField
-from django import forms
-from .models import Category, AttributeGroup, Attribute
+
+from .forms import AttributeGroupForm, AttributeForm
+from .models import Category, AttributeGroup, Attribute, EnumOption, ProductAttributeValue
 
 
 @admin.register(Category)
 class CategoryAdmin(DraggableMPTTAdmin):
-    list_display = (
-        'tree_actions',
-        'indented_title_modified',
-        'slug',
-        'parent'
-    )
-    list_display_links = ('indented_title_modified',)
+    list_display = ('tree_actions', 'indented_title', 'slug', 'attributes_count')
+    list_display_links = ('indented_title',)
     prepopulated_fields = {'slug': ('name',)}
     search_fields = ('name',)
-
-    def indented_title_modified(self, instance):
-        return format_html(
-            '<div style="text-indent:{}px">{}</div>',
-            instance.mptt_level * 30,  # Увеличиваем отступ для наглядности
-            instance.name
-        )
-
-    indented_title_modified.short_description = 'Категория'
+    mptt_level_indent = 25
+    actions = ['export_category_attributes']
 
     def get_queryset(self, request):
-        return super().get_queryset(request).order_by('tree_id', 'lft')
+        return super().get_queryset(request).annotate(
+            _attributes_count=Count('attribute_groups__attributes', distinct=True)
+        )
 
-class AttributeGroupForm(forms.ModelForm):
-    category = TreeNodeChoiceField(
-        queryset=Category.objects.all(),
-        level_indicator="---",
-        label="Категория"
-    )
+    def attributes_count(self, obj):
+        return obj._attributes_count
+    attributes_count.short_description = _('Атрибутов')
+
+    def export_category_attributes(self, request, queryset):
+        # Пример кастомного действия
+        from django.http import HttpResponse
+        import csv
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="attributes.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Attribute', 'Type', 'Groups'])
+        for category in queryset:
+            for attr in category.attributes.all():
+                writer.writerow([
+                    attr.name,
+                    attr.get_data_type_display(),
+                    ', '.join(str(g) for g in attr.groups.all())
+                ])
+        return response
+
+    export_category_attributes.short_description = _("Экспорт атрибутов категории")
 
 
 @admin.register(AttributeGroup)
-class AttributeGroupAdmin(admin.ModelAdmin):
-    change_list_template = 'admin/catalog_config/attributegroup/change_list.html'
-    form = AttributeGroupForm
-    list_display = ('name', 'indented_category', 'category')
+class AttributeGroupAdmin(DraggableMPTTAdmin):
+    list_display = ('tree_actions', 'indented_title', 'category_hierarchy')
     list_filter = ('category',)
-    search_fields = ('category__name', 'name')
+    search_fields = ('name', 'category__name')
+    mptt_level_indent = 20
 
-    def changelist_view(self, request, extra_context=None):
-        # Используем annotate для подсчета групп
-        categories = Category.objects.annotate(
-            num_groups=models.Count('attribute_groups')
-        ).prefetch_related('attribute_groups').order_by('tree_id', 'lft')
+    verbose_name = _("Группа атрибутов")
+    verbose_name_plural = _("Группы атрибутов")
 
-        grouped_data = []
-        for category in categories:
-            # Проверяем, есть ли группы через аннотацию
-            if category.num_groups > 0:
-                grouped_data.append({
-                    'id': category.id,
-                    'name': category.name,
-                    'attribute_groups': category.attribute_groups.all()
-                })
+    def indented_title(self, instance):
+        return format_html(
+            '<div style="text-indent:{}px">{}</div>',
+            instance._mpttfield('level') * self.mptt_level_indent,
+            instance.name
+        )
 
-        extra_context = extra_context or {}
-        extra_context['categories'] = grouped_data
+    def category_hierarchy(self, obj):
+        return format_html(
+            '<ul style="margin:0; padding-left:20px">' +
+            ''.join(f"<li>{cat.name}</li>" for cat in obj.category.get_ancestors(include_self=True)) +
+            '</ul>'
+        )
 
-        return super().changelist_view(request, extra_context=extra_context)
+    category_hierarchy.short_description = _('Категория')
 
-    def indented_category(self, obj):
-        return self.format_hierarchy(obj.category)
 
-    indented_category.short_description = 'Иерархия категории'
+class EnumOptionInline(admin.TabularInline):
+    model = EnumOption
+    extra = 3
+    max_num = 20
+    verbose_name = _("Вариант значения")
+    verbose_name_plural = _("Варианты значений")
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        # Для поля category используем кастомный виджет с иерархией
-        if db_field.name == "category":
-            kwargs["queryset"] = Category.objects.all().order_by('tree_id', 'lft')
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    def get_max_num(self, request, obj=None, **kwargs):
+        # Показываем 3 пустых поля для новых атрибутов
+        return 3 if obj is None else 20
 
-    @staticmethod
-    def format_hierarchy(category):
-        if not category:
-            return ""
-        ancestors = category.get_ancestors(include_self=True)
-        return " → ".join([c.name for c in ancestors])
 
 @admin.register(Attribute)
-class AttributeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'group', 'category', 'data_type', 'unit_display')
-    list_filter = ('group__category', 'data_type')
-    change_list_template = 'admin/catalog_config/attribute/change_list.html'
+class AttributeAdmin(DraggableMPTTAdmin):
+    form = AttributeForm
+    list_display = ('tree_actions', 'indented_title', 'data_type_display', 'unit', 'is_required', 'groups_list')
+    search_fields = ('name', 'groups__name')
+    filter_horizontal = ('groups',)
+    save_on_top = True
+    inlines = [EnumOptionInline]
+    actions = ['check_attributes_consistency']
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'data_type', 'groups', 'unit', 'is_required')
+        }),
+        (_('Валидация'), {
+            'fields': ('validation_regex',),
+            'classes': ('collapse',)
+        }),
+    )
+    mptt_level_indent = 20
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related('group__category')
+    verbose_name = _("Атрибут")
+    verbose_name_plural = _("Атрибуты")
 
-    def category(self, obj):
-        return obj.group.category.name
+    def indented_title(self, instance):
+        return format_html(
+            '<div style="text-indent:{}px">{}</div>',
+            instance._mpttfield('level') * self.mptt_level_indent,
+            instance.name
+        )
 
-    category.short_description = "Категория"
+    def data_type_display(self, obj):
+        return obj.get_data_type_display()
 
-    def unit_display(self, obj):
-        return obj.unit if obj.unit else '—'
+    data_type_display.short_description = _('Тип данных')
 
-    unit_display.short_description = 'Единица измерения'
+    def groups_list(self, obj):
+        return format_html(
+            '<ul style="margin:0">' +
+            ''.join(f"<li>{g.category.name} → {g.name}</li>" for g in obj.groups.all()) +
+            '</ul>'
+        )
 
-    def changelist_view(self, request, extra_context=None):
-        from .models import Category
-        categories = Category.objects.prefetch_related(
-            'attribute_groups__attributes'
-        ).order_by('tree_id', 'lft')
+    groups_list.short_description = _('Группы')
 
-        grouped_data = []
-        for category in categories:
-            groups = []
-            for group in category.attribute_groups.all():
-                attributes = group.attributes.all()
-                if attributes:
-                    groups.append({
-                        'id': group.id,
-                        'name': group.name,
-                        'attributes': attributes
-                    })
-            if groups:
-                grouped_data.append({
-                    'id': category.id,
-                    'name': category.name,
-                    'groups': groups
-                })
+    def check_attributes_consistency(self, request, queryset):
+        # Пример кастомного действия проверки
+        inconsistent = []
+        for attr in queryset:
+            if attr.data_type == 'enum' and not attr.enum_options.exists():
+                inconsistent.append(attr)
+        self.message_user(request, f"Найдено {len(inconsistent)} некорректных атрибутов")
+        return HttpResponseRedirect(request.get_full_path())
 
-        extra_context = extra_context or {}
-        extra_context['categories'] = grouped_data
+    check_attributes_consistency.short_description = _("Проверить целостность")
 
-        return super().changelist_view(request, extra_context=extra_context)
 
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path('<path:object_id>/json/',
-                 self.admin_site.admin_view(self.attribute_json),
-                 name='products_attribute_json')
-        ]
-        return custom_urls + urls
+class AttributeValueFilter(admin.SimpleListFilter):
+    title = _('Тип значения')
+    parameter_name = 'value_type'
 
-    def attribute_json(self, request, object_id):
-        attribute = Attribute.objects.get(id=object_id)
-        return JsonResponse({
-            'data_type': attribute.data_type,
-            'unit': attribute.unit
-        })
+    def lookups(self, request, model_admin):
+        return Attribute.DATA_TYPES
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(attribute__data_type=self.value())
+        return queryset
+
+
+class ProductAttributeValueInline(admin.StackedInline):
+    model = ProductAttributeValue
+    extra = 0
+    fields = ('attribute', 'value_widget')
+    readonly_fields = ('value_widget',)
+    can_delete = False
+    template = 'admin/catalog_config/productattributevalue/stacked.html'
+
+    def value_widget(self, obj):
+        attr = obj.attribute
+        if attr.data_type == 'enum':
+            options = attr.enum_options.values_list('value', flat=True)
+            return format_html(
+                '<select disabled>{}</select>',
+                ''.join(f'<option>{opt}</option>' for opt in options)
+            )
+        elif attr.data_type == 'boolean':
+            return format_html('<input type="checkbox" disabled {}>',
+                               'checked' if obj.value else '')
+        return obj.value
+
+    value_widget.short_description = _('Значение')

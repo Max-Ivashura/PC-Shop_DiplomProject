@@ -1,4 +1,3 @@
-from apps.products.filters import ProductFilter
 from apps.products.models import Product
 from django.db.models import Q
 from django_filters.views import FilterView
@@ -20,7 +19,6 @@ class ProductListView(FilterView):
     template_name = 'products/product_list.html'
     context_object_name = 'products'
     paginate_by = 9
-    filterset_class = ProductFilter
 
     def get_queryset(self):
         queryset = super().get_queryset()
