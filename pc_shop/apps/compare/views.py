@@ -1,59 +1,83 @@
-from django.shortcuts import redirect, get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, Http404
+from django.core.exceptions import ValidationError
+from django.urls import reverse
+
 from apps.products.models import Product
-from django.http import JsonResponse
 from apps.compare.models import Comparison
 
 
 @login_required
 def add_to_compare(request, product_id):
+    """AJAX-представление для добавления товара в сравнение"""
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        raise Http404
+
     product = get_object_or_404(Product, id=product_id)
-    comparison, created = Comparison.objects.get_or_create(user=request.user)
+    comparison = request.user.comparisons.first() or Comparison.objects.create(user=request.user)
 
-    # Проверка категории
-    if comparison.products.exists():
-        existing_product = comparison.products.first()
-        if existing_product.category != product.category:
-            return JsonResponse({
-                'success': False,
-                'message': 'Можно сравнивать только товары одной категории'
-            })
+    try:
+        # Проверяем категорию перед добавлением
+        if comparison.products.exists():
+            existing_product = comparison.products.first()
+            if existing_product.category != product.category:
+                raise ValidationError("Можно сравнивать только товары одной категории")
 
-    comparison.products.add(product)
-    return JsonResponse({
-        'success': True,
-        'message': 'Товар добавлен в сравнение',
-        'compare_count': comparison.products.count()
-    })
+        comparison.add_product(product)
 
-def remove_from_comparison(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    comparison = request.user.comparisons.first()
-    if comparison:
-        comparison.products.remove(product)
-    return redirect('compare_view')
+        return JsonResponse({
+            'success': True,
+            'message': 'Товар добавлен в сравнение',
+            'compare_count': comparison.products.count(),
+            'max_reached': comparison.products.count() >= Comparison.MAX_PRODUCTS
+        })
+
+    except ValidationError as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=400)
 
 
-# compare/views.py
 @login_required
-def compare_view(request):
-    # Проверяем, есть ли сравнения у пользователя
+def remove_from_compare(request, product_id):
+    """AJAX-представление для удаления товара из сравнения"""
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        raise Http404
+
+    product = get_object_or_404(Product, id=product_id)
     comparison = request.user.comparisons.first()
-    products = comparison.products.all() if comparison else []
 
-    # Если товаров нет — перенаправляем
-    if not products:
-        return redirect('product_list')  # Или другая страница
+    if comparison:
+        comparison.remove_product(product)
+        remaining = comparison.products.count()
 
-    # Группируем характеристики
-    grouped_attributes = {}
-    for product in products:
-        for pa in product.attributes.select_related('attribute__group').all():
-            group_name = pa.attribute.group.name
-            attr_name = pa.attribute.name
-            grouped_attributes.setdefault(group_name, {}).setdefault(attr_name, {})[product.id] = pa.value
+        return JsonResponse({
+            'success': True,
+            'compare_count': remaining,
+            'redirect': reverse('compare:detail') if remaining > 0 else reverse('product_list')
+        })
 
-    return render(request, 'compare/compare.html', {
-        'products': products,
-        'grouped_attributes': grouped_attributes
+    return JsonResponse({'success': False, 'message': 'Сравнение не найдено'}, status=404)
+
+
+@login_required
+def compare_detail(request):
+    """Основная страница сравнения"""
+    comparison = request.user.comparisons.prefetch_related(
+        'products__images',
+        'products__attributes__attribute__group'
+    ).first()
+
+    if not comparison or comparison.products.count() == 0:
+        return redirect('product_list')
+
+    # Генерация матрицы атрибутов
+    attributes_matrix = comparison.attributes_matrix
+
+    return render(request, 'compare/compare_detail.html', {
+        'comparison': comparison,
+        'attributes_matrix': attributes_matrix,
+        'MAX_PRODUCTS': Comparison.MAX_PRODUCTS
     })

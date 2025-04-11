@@ -41,7 +41,7 @@ class OrderAdmin(admin.ModelAdmin):
     )
     inlines = [OrderItemInline]
     readonly_fields = ('created_at', 'updated_at', 'get_total_cost')
-    list_editable = ('status',)
+    list_editable = ()
     actions = ['mark_as_shipped', 'mark_as_canceled']
     fieldsets = (
         ('Основная информация', {
@@ -101,3 +101,15 @@ class OrderAdmin(admin.ModelAdmin):
             obj.id
         )
     payment_actions.short_description = 'Оплата'
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+
+        # Добавляем действие для установки статуса
+        def set_processing(modeladmin, request, queryset):
+            queryset.update(status='processing')
+
+        set_processing.short_description = 'Перевести в обработку'
+
+        actions['set_processing'] = (set_processing,)
+        return actions
