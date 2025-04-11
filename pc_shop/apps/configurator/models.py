@@ -1,77 +1,111 @@
+# configurator/models.py
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from apps.products.models import Product
 
 User = get_user_model()
 
 
 class CompatibilityRule(models.Model):
-    COMPONENT_TYPES = [
-        ('cpu', 'Процессор'),
-        ('gpu', 'Видеокарта'),
-        ('motherboard', 'Материнская плата'),
-        ('ram', 'Оперативная память'),
-        ('psu', 'Блок питания'),
-        ('storage', 'Накопитель'),
-        ('cooler', 'Система охлаждения'),
-    ]
-
-    component_type = models.CharField(max_length=20, choices=COMPONENT_TYPES)
-    required_attribute = models.CharField(max_length=255, help_text="Например: 'Сокет', 'Тип памяти'")
-    allowed_values = models.TextField(help_text="Разделенные запятой допустимые значения")
+    component_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name='compatibility_rules',
+        limit_choices_to={'app_label': 'products', 'model': 'product'}
+    )
+    attribute = models.ForeignKey(
+        'catalog_config.Attribute',
+        on_delete=models.CASCADE,
+        related_name='compatibility_rules'
+    )
+    value = models.CharField(max_length=255)
+    required_component_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name='required_rules',
+        limit_choices_to={'app_label': 'products', 'model': 'product'}
+    )
+    required_attribute = models.ForeignKey(
+        'catalog_config.Attribute',
+        on_delete=models.CASCADE,
+        related_name='required_attributes'
+    )
+    required_value = models.CharField(max_length=255)
 
     def __str__(self):
-        return f"{self.get_component_type_display()}: {self.required_attribute}"
+        return f"{self.component_type} [{self.attribute}={self.value}] → {self.required_component_type} [{self.required_attribute}={self.required_value}]"
+
+
+class BuildComponent(models.Model):
+    build = models.ForeignKey('Build', on_delete=models.CASCADE, related_name='components')
+    component_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        limit_choices_to={'app_label': 'products', 'model': 'product'},
+        verbose_name="Тип компонента"
+    )
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('component_type', 'object_id')
+    selected_options = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ('build', 'component_type')
+
+    def __str__(self):
+        return f"{self.build.name} - {self.content_object}"
 
 
 class Build(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='builds')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    cpu = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='+',
-                            limit_choices_to={'category__name': 'Процессоры'})
-    gpu = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='+',
-                            limit_choices_to={'category__name': 'Видеокарты'}, null=True, blank=True)
-    motherboard = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='+',
-                                    limit_choices_to={'category__name': 'Материнские платы'})
-    ram = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='+',
-                            limit_choices_to={'category__name': 'Оперативная память'})
-    psu = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='+',
-                            limit_choices_to={'category__name': 'Блоки питания'})
-    storage = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='+',
-                                limit_choices_to={'category__name': 'Накопители'})
-    cooler = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='+',
-                               limit_choices_to={'category__name': 'Системы охлаждения'}, null=True, blank=True)
     is_public = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def check_compatibility(self):
         errors = []
+        components = {c.component_type: c for c in self.components.all()}
 
-        # Проверка сокета CPU и материнской платы
-        cpu_socket = self.cpu.attributes.filter(attribute__name='Сокет').first()
-        motherboard_socket = self.motherboard.attributes.filter(attribute__name='Сокет').first()
-        if cpu_socket and motherboard_socket and cpu_socket.value != motherboard_socket.value:
-            errors.append("Несовместимость: Сокет процессора и материнской платы не совпадают")
+        for component in components.values():
+            rules = CompatibilityRule.objects.filter(
+                component_type=component.component_type,
+                value__in=component.content_object.attributes.values_list('value', flat=True)
+            )
 
-        # Проверка совместимости RAM
-        ram_type = self.ram.attributes.filter(attribute__name='Тип памяти').first()
-        motherboard_ram_support = self.motherboard.attributes.filter(
-            attribute__name='Поддерживаемые типы памяти').first()
-        if ram_type and motherboard_ram_support and ram_type.value not in motherboard_ram_support.value.split(', '):
-            errors.append("Несовместимость: Тип памяти не поддерживается материнской платой")
+            for rule in rules:
+                required_component = components.get(rule.required_component_type)
+                if not required_component:
+                    errors.append(f"Отсутствует обязательный компонент: {rule.required_component_type}")
+                    continue
 
-        # Проверка блока питания
-        psu_power = self.psu.attributes.filter(attribute__name='Мощность').first()
-        required_power = sum(
-            component.attributes.filter(attribute__name='Тепловыделение (TDP)').first().value
-            for component in [self.cpu, self.gpu, self.motherboard, self.ram, self.storage, self.cooler]
-            if component and component.attributes.filter(attribute__name='Тепловыделение (TDP)').exists()
-        )
-        if psu_power and required_power > int(psu_power.value.replace(' Вт', '')):
-            errors.append("Недостаточная мощность блока питания")
+                required_attr = required_component.content_object.attributes.filter(
+                    attribute=rule.required_attribute
+                ).first()
+
+                if not required_attr or required_attr.value != rule.required_value:
+                    errors.append(
+                        f"Несовместимость: {component} требует {rule.required_attribute} = {rule.required_value}"
+                    )
+
+        # Проверка мощности БП
+        psu = components.get(ContentType.objects.get(model='psu'))
+        if psu:
+            total_power = sum(
+                comp.content_object.get_tdp()
+                for comp in components.values()
+                if hasattr(comp.content_object, 'get_tdp')
+            )
+            if psu.content_object.get_power() < total_power:
+                errors.append(f"Недостаточная мощность БП: {psu.content_object.get_power()} Вт / {total_power} Вт")
 
         return errors
 
-    def __str__(self):
-        return self.name
+    def get_total_price(self):
+        return sum(
+            component.content_object.price
+            for component in self.components.all()
+            if component.content_object
+        )

@@ -83,6 +83,14 @@ class Product(models.Model):
                 groups[group].append(attr_value)
         return sorted(groups.items(), key=lambda x: x[0].name)
 
+    def get_tdp(self):
+        attr = self.attributes.filter(attribute__name='Тепловыделение (TDP)').first()
+        return int(attr.value.replace(' Вт', '')) if attr else 0
+
+    def get_power(self):
+        attr = self.attributes.filter(attribute__name='Мощность').first()
+        return int(attr.value.replace(' Вт', '')) if attr else 0
+
     def get_absolute_url(self):
         return reverse('product_detail', kwargs={'slug': self.slug})
 

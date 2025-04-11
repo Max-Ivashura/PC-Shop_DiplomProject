@@ -90,6 +90,11 @@ class Attribute(MPTTModel):
     )
     unit = models.CharField(_("Единица измерения"), max_length=20, blank=True)
     is_required = models.BooleanField(_("Обязательный"), default=False)
+    compatibility_critical = models.BooleanField(
+        "Критично для совместимости",
+        default=False,
+        help_text="Атрибут влияет на совместимость компонентов"
+    )
     validation_regex = models.CharField(
         _("Регулярное выражение"),
         max_length=255,
@@ -104,6 +109,7 @@ class Attribute(MPTTModel):
         related_name='children',
         verbose_name=_("Родительский атрибут")  # Исправлено
     )
+
 
     class Meta:
         verbose_name = _("Атрибут")

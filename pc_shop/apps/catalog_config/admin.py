@@ -25,6 +25,7 @@ class CategoryAdmin(DraggableMPTTAdmin):
 
     def attributes_count(self, obj):
         return obj._attributes_count
+
     attributes_count.short_description = _('Атрибутов')
 
     def export_category_attributes(self, request, queryset):
@@ -89,7 +90,10 @@ class EnumOptionInline(admin.TabularInline):
 @admin.register(Attribute)
 class AttributeAdmin(DraggableMPTTAdmin):
     form = AttributeForm
-    list_display = ('tree_actions', 'indented_title', 'data_type_display', 'unit', 'is_required', 'groups_list')
+    list_display = (
+    'tree_actions', 'indented_title', 'data_type_display', 'unit', 'is_required', 'compatibility_critical',
+    'groups_list')
+    list_filter = ('data_type', 'is_required', 'compatibility_critical')
     search_fields = ('name', 'groups__name')
     filter_horizontal = ('groups',)
     save_on_top = True
@@ -97,7 +101,7 @@ class AttributeAdmin(DraggableMPTTAdmin):
     actions = ['check_attributes_consistency']
     fieldsets = (
         (None, {
-            'fields': ('name', 'data_type', 'groups', 'unit', 'is_required')
+            'fields': ('name', 'data_type', 'groups', 'unit', 'is_required', 'compatibility_critical')
         }),
         (_('Валидация'), {
             'fields': ('validation_regex',),
@@ -108,6 +112,15 @@ class AttributeAdmin(DraggableMPTTAdmin):
 
     verbose_name = _("Атрибут")
     verbose_name_plural = _("Атрибуты")
+
+    def compatibility_critical(self, obj):
+        return format_html(
+            '<span style="color: {};">{}</span>',
+            'red' if obj.compatibility_critical else 'green',
+            'Да' if obj.compatibility_critical else 'Нет'
+        )
+
+    compatibility_critical.short_description = _('Критично для совместимости')
 
     def indented_title(self, instance):
         return format_html(
