@@ -1,52 +1,81 @@
-/* Все стили изолированы через .success-container */
+/* success.css */
 .success-container {
-    --success-bg: #d4edda;
-    --icon-size: 6rem;
-    --shadow: 0 10px 25px rgba(0,0,0,0.1);
+    --primary: #28a745;
+    --success: #d4edda;
+    --dark: #343a40;
+    --light: #f8f9fa;
+    --border: #dee2e6;
+    --shadow: 0 10px 25px rgba(0,0,0,0.08);
 }
 
-/* Основной контейнер */
-.success-container .success-card {
+/* Базовые стили */
+.success-card {
     border: none;
     border-radius: 15px;
+    background: white;
     box-shadow: var(--shadow);
-    animation: floatIn 0.8s ease-out;
+    padding: 2.5rem;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.success-card:hover {
+    transform: translateY(-3px);
 }
 
 /* Иконка */
-.success-container .success-icon {
-    font-size: var(--icon-size);
+.success-icon {
+    font-size: 5rem;
+    color: var(--primary);
     margin-bottom: 1.5rem;
-    animation: pulse 1.5s infinite;
+    animation: pulse 2s infinite;
 }
 
 /* Заголовок */
-.success-container .success-title {
+.success-title {
     color: var(--dark);
     font-weight: 700;
     margin-bottom: 1rem;
 }
 
 /* Сообщение */
-.success-container .success-message {
+.success-message {
     color: var(--dark);
     opacity: 0.8;
     margin-bottom: 2rem;
 }
 
-/* Кнопка */
-.success-container .success-btn {
+/* Детали заказа */
+.order-details {
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.order-details .table {
+    margin-bottom: 0;
+}
+
+.order-details th,
+.order-details td {
+    padding: 0.75rem;
+    border: none;
+}
+
+/* Кнопки */
+.success-btn {
     background: var(--primary);
     border: none;
     padding: 12px 30px;
     font-weight: 600;
     border-radius: 8px;
     transition: transform 0.3s, box-shadow 0.3s;
+    margin: 0.5rem;
 }
 
-.success-container .success-btn:hover {
+.success-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
 }
 
 /* Анимации */
@@ -63,21 +92,31 @@
 
 @keyframes pulse {
     0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+    50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
 
 /* Адаптивность */
 @media (max-width: 768px) {
-    .success-container .success-card {
-        padding: 2rem;
+    .success-card {
+        padding: 1.5rem;
     }
 
-    .success-container .success-icon {
-        font-size: 4rem;
+    .success-icon {
+        font-size: 3.5rem;
     }
 
-    .success-container .success-title {
-        font-size: 1.5rem;
+    .success-title {
+        font-size: 1.25rem;
     }
+
+    .order-details {
+        display: none;
+    }
+}
+
+/* Доступность */
+.success-card:focus-within {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }

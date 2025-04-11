@@ -1,123 +1,120 @@
 {% extends 'base.html' %}
 {% load url_helpers %}
 {% load static %}
+{% load cache %}
+
 {% block css %}
     <link rel="stylesheet" href="{% static 'products/css/product_list.css' %}">
+    <!-- Подключение LazyLoad -->
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.8.3/dist/lazyload.min.js"></script>
 {% endblock %}
 
 {% block content %}
-    <div class="product-list-container">
+    <div class="product-list-container" itemscope itemtype="http://schema.org/ItemList">
         <div class="row">
             <!-- Боковая панель фильтров -->
+            {% cache 300 filter_sidebar request.GET.urlencode %}
             <div class="col-lg-3 mb-4">
-                <form method="get" action="">
-                    <div class="filter-sidebar bg-white p-4 rounded shadow-sm">
-                        <h5 class="mb-4">Фильтры</h5>
+                <form method="get" action="" class="filter-sidebar bg-white p-4 rounded shadow-sm">
+                    <h5 class="mb-4">Фильтры</h5>
 
-                        <!-- Цена -->
-                        <div class="accordion-item mb-3">
-                            <h2 class="accordion-header" id="headingPrice">
-                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#collapsePrice">
-                                    Цена
-                                </button>
-                            </h2>
-                            <div id="collapsePrice" class="accordion-collapse collapse show">
-                                <div class="accordion-body">
-                                    <div class="row g-2">
-                                        <div class="col">
-                                            <input type="number" class="form-control" name="price_min"
-                                                   value="{{ request.GET.price_min|default:'' }}">
-                                        </div>
-                                        <div class="col">
-                                            <input type="number" class="form-control" name="price_max"
-                                                   value="{{ request.GET.price_max|default:'' }}">
-                                        </div>
+                    <!-- Цена -->
+                    <div class="accordion-item mb-3">
+                        <h2 class="accordion-header" id="headingPrice">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#collapsePrice">
+                                Цена
+                            </button>
+                        </h2>
+                        <div id="collapsePrice" class="accordion-collapse collapse show">
+                            <div class="accordion-body">
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <input type="number" class="form-control" name="price_min"
+                                               value="{{ request.GET.price_min|default:'' }}" min="0">
+                                    </div>
+                                    <div class="col">
+                                        <input type="number" class="form-control" name="price_max"
+                                               value="{{ request.GET.price_max|default:'' }}" min="0">
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Характеристики -->
-                        {% for field in filter.form %}
-                            {% if 'attr_' in field.name %}
-                                <div class="accordion-item mb-3">
-                                    <h2 class="accordion-header" id="heading{{ field.name }}">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                                                data-bs-target="#collapse{{ field.name }}">
-                                            {{ field.label }}
-                                        </button>
-                                    </h2>
-                                    <div id="collapse{{ field.name }}" class="accordion-collapse collapse show">
-                                        <div class="accordion-body">
-                                            {% for choice in field.field.choices %}
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox"
-                                                           name="{{ field.name }}"
-                                                           value="{{ choice.0 }}"
-                                                           {% if choice.0 in field.value|default_if_none:'' %}checked{% endif %}>
-                                                    <label class="form-check-label">{{ choice.0 }}</label>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-
-                        <button type="submit" class="btn btn-primary w-100">Применить</button>
                     </div>
+
+                    <!-- Характеристики -->
+                    {% for group, attrs in grouped_attributes.items %}
+                        <div class="accordion-item mb-3">
+                            <h2 class="accordion-header" id="heading{{ group.id }}">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapse{{ group.id }}">
+                                    {{ group.name }}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ group.id }}" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    {% for attr in attrs %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="attr_{{ attr.attribute.id }}"
+                                                   value="{{ attr.value }}"
+                                                   {% if attr.value in request.GET.values %}checked{% endif %}>
+                                            <label class="form-check-label">{{ attr.value }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Применить</button>
                 </form>
             </div>
+            {% endcache %}
 
             <!-- Список товаров -->
             <div class="col-lg-9">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3>{% if category %}{{ category.name }}{% else %}Все товары{% endif %}</h3>
+                    <h3 itemprop="name">{% if category %}{{ category.name }}{% else %}Все товары{% endif %}</h3>
+
                     <!-- Блок сортировки -->
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button"
                                 data-bs-toggle="dropdown">
                             Сортировать:
                             <span id="active-sort-label">
-                        {% if request.GET.sort == 'price_asc' %}
-                            по возрастанию цены
-                        {% elif request.GET.sort == 'price_desc' %}
-                            по убыванию цены
-                        {% elif request.GET.sort == 'newest' %}
-                            новинки
-                        {% else %}
-                            по умолчанию
-                        {% endif %}
-                    </span>
+                                {% if request.GET.sort == 'price_asc' %}
+                                    по возрастанию цены
+                                {% elif request.GET.sort == 'price_desc' %}
+                                    по убыванию цены
+                                {% elif request.GET.sort == 'newest' %}
+                                    новинки
+                                {% else %}
+                                    по умолчанию
+                                {% endif %}
+                            </span>
                         </button>
                         <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item {% if request.GET.sort == 'price_asc' %}active{% endif %}"
-                                   href="?{% url_replace sort='price_asc' %}">
-                                    Цена: по возрастанию
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if request.GET.sort == 'price_desc' %}active{% endif %}"
-                                   href="?{% url_replace sort='price_desc' %}">
-                                    Цена: по убыванию
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if request.GET.sort == 'newest' %}active{% endif %}"
-                                   href="?{% url_replace sort='newest' %}">
-                                    Новинки
-                                </a>
-                            </li>
+                            {% for value, label in sort_options %}
+                                <li>
+                                    <a class="dropdown-item {% if request.GET.sort == value %}active{% endif %}"
+                                       href="?{% url_replace sort=value %}">
+                                        {{ label }}
+                                    </a>
+                                </li>
+                            {% endfor %}
                         </ul>
                     </div>
                 </div>
 
-                <div class="row" id="product-grid">
+                <div class="row" id="product-grid" itemprop="itemListElement" itemscope>
                     {% for product in products %}
                         <div class="col-md-4 mb-4">
-                            {% include 'products/includes/product_card.html' %}
+                            {% include 'products/includes/product_card.html' with product=product %}
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-warning">Товаров по заданным критериям не найдено</div>
                         </div>
                     {% endfor %}
                 </div>
@@ -127,4 +124,13 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Ленивая загрузка изображений
+        new LazyLoad({
+            elements_selector: ".lazy"
+        });
+    </script>
 {% endblock %}

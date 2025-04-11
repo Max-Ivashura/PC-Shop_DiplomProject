@@ -1,171 +1,166 @@
+# admin.py
 from django.contrib import admin
+from django.contrib.admin import RelatedFieldListFilter
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+from django.db.models import OuterRef, Subquery, Prefetch
 from .models import Product, ProductImage, Review
-from apps.catalog_config.models import ProductAttributeValue
+from apps.catalog_config.models import ProductAttributeValue, Attribute
 
 
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
-    extra = 1
-    readonly_fields = ('preview_thumbnail',)
-    fields = ('image', 'preview_thumbnail', 'is_main')
+    extra = 0
+    readonly_fields = ('preview',)
+    fields = ('image', 'preview', 'is_main')
+    ordering = ('-is_main', 'id')
 
-    def preview_thumbnail(self, obj):
+    def preview(self, obj):
         return obj.preview_thumbnail()
 
-    preview_thumbnail.short_description = "Превью"
-
-
-class ProductAttributeValueInline(admin.TabularInline):
-    model = ProductAttributeValue
-    extra = 0
-    fields = ('attribute', 'value_display', 'value_input')
-    readonly_fields = ('attribute', 'value_display')
-    can_delete = False
-
-    class Media:
-        css = {'all': ('products/css/admin.css',)}
-        js = ('products/js/admin.js',)
-
-    def value_display(self, obj):
-        return obj.get_value()
-
-    value_display.short_description = _('Текущее значение')
-
-    def value_input(self, obj):
-        attr = obj.attribute
-        value = obj.get_value()
-
-        if attr.data_type == 'string':
-            return f'<input type="text" name="value_{obj.id}" value="{value}" />'
-        elif attr.data_type == 'number':
-            return f'<input type="number" name="value_{obj.id}" value="{value}" />'
-        elif attr.data_type == 'boolean':
-            checked = 'checked' if value else ''
-            return f'<input type="checkbox" name="value_{obj.id}" {checked} />'
-        elif attr.data_type == 'enum':
-            options = ''.join(
-                f'<option value="{opt}" {"selected" if opt == value else ""}>{opt}</option>'
-                for opt in attr.enum_options
-            )
-            return f'<select name="value_{obj.id}">{options}</select>'
-        return '-'
-
-    value_input.short_description = _('Изменить значение')
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related('attribute')
-
-    def has_add_permission(self, request, obj=None):
-        return False
+    preview.short_description = _("Миниатюра")
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
+        '__str__',
         'main_image_preview',
-        'name',
-        'category',
+        'category_hierarchy',
         'price',
-        'quantity_status',
+        'stock_status',
         'is_available',
         'created_at'
     )
-    list_filter = ('category', 'is_available', 'created_at')
-    search_fields = ('name', 'description', 'category__name')
-    readonly_fields = ('main_image_preview', 'created_at', 'updated_at')
+    list_filter = (
+        'is_available',
+        ('category', admin.RelatedOnlyFieldListFilter),
+        'created_at'
+    )
+    search_fields = (
+        'name',
+        'description',
+        'category__name',
+        'category__path'
+    )
     prepopulated_fields = {'slug': ('name',)}
-    inlines = [ProductImageInline, ProductAttributeValueInline]
+    inlines = [ProductImageInline]
     save_on_top = True
+    list_select_related = ('category',)
+    date_hierarchy = 'created_at'
+    actions = ['update_attributes']
 
     fieldsets = (
-        (_('Основная информация'), {
-            'fields': ('main_image_preview', 'category', 'name', 'slug', 'price')
+        (_("Основное"), {
+            'fields': (
+                'name',
+                'slug',
+                'category',
+                'price',
+                'description',
+                'main_image_preview'
+            )
         }),
-        (_('Инвентаризация'), {
-            'fields': ('quantity', 'is_available')
+        (_("Инвентаризация"), {
+            'fields': ('quantity', 'is_available'),
         }),
-        (_('Контент'), {
-            'fields': ('description',)
-        }),
-        (_('Метаданные'), {
-            'fields': ('created_at', 'updated_at')
+        (_("SEO"), {
+            'fields': ('meta_title', 'meta_description'),
+            'classes': ('collapse',)
         }),
     )
 
-    def main_image_preview(self, obj):
-        if obj.main_image:
-            return format_html(
-                '<img src="{}" style="max-height: 80px; max-width: 80px;" />',
-                obj.main_image.image.url
-            )
-        return "-"
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related(
+            Prefetch('images', queryset=ProductImage.objects.order_by('-is_main'))
+        )
 
-    main_image_preview.short_description = _("Главное изображение")
+    def category_hierarchy(self, obj):
+        return obj.category.path
 
-    def quantity_status(self, obj):
-        if obj.quantity == 0:
+    category_hierarchy.short_description = _("Путь категории")
+
+    def stock_status(self, obj):
+        if obj.quantity <= 0:
             return format_html('<span style="color: red;">Нет в наличии</span>')
-        elif obj.quantity < 10:
+        if obj.quantity < 10:
             return format_html(f'<span style="color: orange;">{obj.quantity} шт.</span>')
         return format_html(f'<span style="color: green;">{obj.quantity} шт.</span>')
 
-    quantity_status.short_description = _("Остаток")
+    stock_status.short_description = _("Остаток")
 
-    def save_related(self, request, form, formsets, change):
-        super().save_related(request, form, formsets, change)
-        product = form.instance
-        if product.category:
+    def main_image_preview(self, obj):
+        return obj.main_image.preview_thumbnail() if obj.main_image else '-'
+
+    main_image_preview.short_description = _("Главное изображение")
+
+    def update_attributes(self, request, queryset):
+        for product in queryset:
             attributes = product.category.get_all_attributes()
             for attr in attributes:
                 ProductAttributeValue.objects.get_or_create(
                     product=product,
                     attribute=attr,
-                    defaults={
-                        'value_string': '' if attr.data_type == 'string' else None,
-                        'value_number': None,
-                        'value_boolean': None,
-                        'value_enum': attr.enum_options[0] if attr.enum_options else None
-                    }
+                    defaults={'value': attr.default_value()}
                 )
 
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
-        if '_continue' in request.POST:
-            self._update_attribute_values(request, obj)
+    update_attributes.short_description = _("Обновить атрибуты для выбранных товаров")
 
-    def _update_attribute_values(self, request, product):
-        pattern = re.compile(r'value_(\d+)')
-        for key, value in request.POST.items():
-            match = pattern.match(key)
-            if match:
-                attr_value_id = match.group(1)
-                try:
-                    attr_value = ProductAttributeValue.objects.get(
-                        id=attr_value_id,
-                        product=product
-                    )
-                    attr = attr_value.attribute
-                    if attr.data_type == 'string':
-                        attr_value.value_string = value
-                    elif attr.data_type == 'number':
-                        attr_value.value_number = value
-                    elif attr.data_type == 'boolean':
-                        attr_value.value_boolean = value == 'on'
-                    elif attr.data_type == 'enum':
-                        attr_value.value_enum = value
-                    attr_value.save()
-                except ProductAttributeValue.DoesNotExist:
-                    pass
+    class Media:
+        css = {'all': ('products/css/admin.css',)}
+        js = ('products/js/admin.js',)
+
+
+class ProductAttributeValueInline(admin.TabularInline):
+    model = ProductAttributeValue
+    extra = 0
+    readonly_fields = ('attribute_type',)
+    fields = ('attribute', 'value', 'attribute_type')
+    autocomplete_fields = ('attribute',)
+    show_change_link = True
+
+    def attribute_type(self, obj):
+        return obj.attribute.get_data_type_display()
+
+    attribute_type.short_description = _("Тип атрибута")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('attribute')
 
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('user', 'product', 'rating', 'created_at')
-    list_filter = ('rating', 'created_at')
-    search_fields = ('user__username', 'product__name', 'text')
-    readonly_fields = ('user', 'product', 'created_at')
+    list_display = ('product', 'user', 'rating_stars', 'approved', 'created_at')
+    list_filter = ('approved', 'rating', 'created_at')
+    search_fields = ('product__name', 'user__username', 'text')
+    list_editable = ('approved',)
+    autocomplete_fields = ('product', 'user')
+    date_hierarchy = 'created_at'
 
-    def has_add_permission(self, request):
-        return False
+    def rating_stars(self, obj):
+        return '★' * obj.rating + '☆' * (5 - obj.rating)
+
+    rating_stars.short_description = _("Рейтинг")
+
+
+@admin.register(ProductAttributeValue)
+class ProductAttributeValueAdmin(admin.ModelAdmin):
+    list_display = ('product', 'attribute', 'value_type', 'value_preview')
+    list_filter = (
+        'attribute__data_type',  # Фильтр по типу атрибута
+        ('attribute__groups__category', RelatedFieldListFilter),  # Исправленный фильтр
+    )
+    search_fields = ('product__name', 'attribute__name')
+    autocomplete_fields = ('product', 'attribute')
+
+    def value_type(self, obj):
+        return obj.attribute.get_data_type_display()
+
+    value_type.short_description = _("Тип значения")
+
+    def value_preview(self, obj):
+        if obj.attribute.data_type == 'enum':
+            return obj.value
+        return str(obj.value)
+
+    value_preview.short_description = _("Значение")

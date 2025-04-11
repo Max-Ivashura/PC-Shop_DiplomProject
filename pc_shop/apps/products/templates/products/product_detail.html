@@ -1,11 +1,15 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load cache %}
+
 {% block css %}
     <link rel="stylesheet" href="{% static 'products/css/product_detail.css' %}">
+    <!-- Подключение LazyLoad -->
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.8.3/dist/lazyload.min.js"></script>
 {% endblock %}
 
 {% block content %}
-    <div class="product-detail-container">
+    <div class="product-detail-container" itemscope itemtype="http://schema.org/Product">
         <div class="row gx-5">
             <!-- Левая колонка - Галерея -->
             <div class="col-md-6">
@@ -13,29 +17,40 @@
                     <!-- Основное изображение -->
                     <div class="main-image">
                         {% if main_image %}
-                            <img src="{{ main_image.image.url }}" alt="{{ product.name }}"
-                                 class="img-fluid rounded" id="mainImage">
+                            <img src="{{ main_image.image.url }}"
+                                 alt="{{ product.name }}"
+                                 class="img-fluid rounded lazy"
+                                 itemprop="image"
+                                 id="mainImage">
                         {% else %}
                             <div class="no-image">Нет изображений</div>
                         {% endif %}
                     </div>
+
+                    <!-- Миниатюры -->
                     <div class="thumbnails d-flex gap-2 mt-3">
-                        {% for image in product.gallery.all %}
+                        {% for image in product.images.all %}
                             <div class="thumbnail-item {% if forloop.first %}active{% endif %}"
                                  onclick="changeMainImage('{{ image.image.url }}', this)">
-                                <img src="{{ image.image_thumbnail.url }}" class="img-thumbnail">
+                                <img src="{{ image.get_thumbnail_url }}"
+                                     data-src="{{ image.image.url }}"
+                                     class="img-thumbnail lazy"
+                                     alt="{{ product.name }} - миниатюра">
                             </div>
                         {% endfor %}
                     </div>
-
                 </div>
             </div>
 
             <!-- Правая колонка - Описание и действия -->
             <div class="col-md-6">
-                <h1 class="product-title">{{ product.name }}</h1>
-                <div class="product-price mb-4">
-                    <span class="h3 text-primary">{{ product.price }} ₽</span>
+                <h1 class="product-title" itemprop="name">{{ product.name }}</h1>
+
+                <!-- Блок цены -->
+                <div class="product-price mb-4" itemprop="offers" itemscope itemtype="http://schema.org/Offer">
+                    <span class="h3 text-primary" itemprop="price">{{ product.price }}</span>
+                    <meta itemprop="priceCurrency" content="RUB">
+                    ₽
                     {% if product.old_price %}
                         <del class="ms-2 text-muted">{{ product.old_price }} ₽</del>
                     {% endif %}
@@ -46,7 +61,9 @@
                     <div class="d-grid gap-3">
                         <!-- Кнопка в корзину -->
                         <button class="btn btn-primary btn-lg add-to-cart w-100"
-                                data-product-id="{{ product.id }}">
+                                data-product-id="{{ product.id }}"
+                                data-product-name="{{ product.name }}"
+                                data-product-price="{{ product.price }}">
                             <i class="fas fa-shopping-cart me-2"></i>В корзину
                         </button>
 
@@ -90,49 +107,116 @@
 
                 <!-- Контент вкладок -->
                 <div class="tab-content mt-3" id="productTabsContent">
+                    <!-- Описание -->
                     <div class="tab-pane fade show active" id="description" role="tabpanel">
                         {{ product.description|safe }}
                     </div>
-                    <div class="tab-pane fade" id="specs" role="tabpanel">
-                        {% for group, attributes in grouped_attributes %}
-                            <div class="specs-group">
-                                <h5 class="border-bottom pb-2 mb-3">{{ group }}</h5>
-                                <ul class="specs-list">
-                                    {% for attr in attributes %}
-                                        <li class="specs-item">
-                                            <strong>{{ attr.attribute.name }}:</strong> {{ attr.value }}
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endfor %}
-                    </div>
+
+                    <!-- Характеристики -->
+                    {% cache 300 product_specs product.id %}
+                        <div class="tab-pane fade" id="specs" role="tabpanel">
+                            {% for group, attributes in grouped_attributes %}
+                                <div class="specs-group">
+                                    <h5 class="border-bottom pb-2 mb-3">{{ group }}</h5>
+                                    <ul class="specs-list">
+                                        {% for attr in attributes %}
+                                            <li class="specs-item">
+                                                <strong>{{ attr.attribute.name }}:</strong>
+                                                <span>{{ attr.value }}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endcache %}
+
+                    <!-- Отзывы -->
                     <div class="tab-pane fade" id="reviews" role="tabpanel">
-                        <!-- Форма и список отзывов -->
                         <div class="mt-4">
                             <h4>Оставьте отзыв</h4>
-                            <form>
+                            <form id="reviewForm">
                                 <div class="mb-3">
-                                    <textarea class="form-control" rows="3" placeholder="Ваш отзыв..."></textarea>
+                                    <textarea class="form-control" rows="3"
+                                              placeholder="Ваш отзыв..."
+                                              name="text"
+                                              required></textarea>
+                                </div>
+                                <div class="rating mb-3">
+                                    <input type="radio" id="star5" name="rating" value="5" required>
+                                    <label for="star5"></label>
+                                    <input type="radio" id="star4" name="rating" value="4">
+                                    <label for="star4"></label>
+                                    <input type="radio" id="star3" name="rating" value="3">
+                                    <label for="star3"></label>
+                                    <input type="radio" id="star2" name="rating" value="2">
+                                    <label for="star2"></label>
+                                    <input type="radio" id="star1" name="rating" value="1">
+                                    <label for="star1"></label>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Отправить</button>
                             </form>
+
+                            <!-- Список отзывов -->
+                            <div class="reviews-list mt-4">
+                                {% for review in product.reviews.all %}
+                                    <div class="review-item" itemprop="review" itemscope
+                                         itemtype="http://schema.org/Review">
+                                        <div class="rating">
+                                            {% for _ in 1..review.rating %}
+                                                ★
+                                            {% endfor %}
+                                        </div>
+                                        <p class="mb-1" itemprop="description">{{ review.text }}</p>
+                                        <small class="text-muted">
+                                            <span itemprop="author">{{ review.user.username }}</span>,
+                                            <time itemprop="datePublished">{{ review.created_at }}</time>
+                                        </small>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Скрипты для галереи -->
+
+    <!-- Скрипты -->
     <script>
+        // Ленивая загрузка изображений
+        new LazyLoad({
+            elements_selector: ".lazy"
+        });
+
+        // Галерея
         function changeMainImage(url, element) {
             document.getElementById('mainImage').src = url;
-            // Удаляем активный класс у всех миниатюр
             document.querySelectorAll('.thumbnail-item').forEach(item => {
                 item.classList.remove('active');
             });
-            // Добавляем активный класс текущей миниатюре
             element.parentElement.classList.add('active');
         }
+
+        // Отправка отзыва
+        document.getElementById('reviewForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            fetch('{% url "add_review" product.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: this.text.value,
+                    rating: this.rating.value
+                })
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            });
+        });
+
     </script>
 {% endblock %}

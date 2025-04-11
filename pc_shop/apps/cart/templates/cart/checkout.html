@@ -2,83 +2,113 @@
 {% load static %}
 {% block title %}Оформление заказа{% endblock %}
 {% block css %}
-<link rel="stylesheet" href="{% static 'cart/css/checkout.css' %}">
+    <link rel="stylesheet" href="{% static 'cart/css/checkout.css' %}">
 {% endblock %}
 {% block content %}
-<!-- Уникальный контейнер для изоляции стилей -->
-<div class="checkout-container">
-    <div class="container my-5">
-        <h1 class="mb-4">Оформление заказа</h1>
-        <div class="row">
-            <!-- Левая колонка: форма -->
-            <div class="col-md-6">
-                <form method="post" class="needs-validation checkout-form" novalidate>
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="id_first_name" class="form-label">Имя</label>
-                        <input type="text" class="form-control" id="id_first_name" name="first_name" required>
-                        <div class="invalid-feedback">Пожалуйста, укажите ваше имя.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="id_last_name" class="form-label">Фамилия</label>
-                        <input type="text" class="form-control" id="id_last_name" name="last_name" required>
-                        <div class="invalid-feedback">Пожалуйста, укажите вашу фамилию.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="id_email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="id_email" name="email" required>
-                        <div class="invalid-feedback">Пожалуйста, укажите корректный email.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="id_address" class="form-label">Адрес доставки</label>
-                        <textarea class="form-control" id="id_address" name="address" rows="3" required></textarea>
-                        <div class="invalid-feedback">Пожалуйста, укажите адрес доставки.</div>
-                    </div>
-                    <button type="submit" class="btn btn-primary checkout-btn">
-                        <i class="fas fa-check me-2"></i>Подтвердить заказ
-                    </button>
-                </form>
-            </div>
+    <div class="checkout-container">
+        <div class="container my-5">
+            <h1 class="mb-4">Оформление заказа</h1>
+            <div class="row">
+                <!-- Левая колонка: форма -->
+                <div class="col-md-6">
+                    <form method="post" class="needs-validation checkout-form" novalidate>
+                        {% csrf_token %}
+                        <!-- Имя -->
+                        <div class="mb-3">
+                            <label for="id_first_name" class="form-label">Имя</label>
+                            <input type="text" class="form-control" id="id_first_name" name="first_name" required>
+                            <div class="invalid-feedback">Пожалуйста, укажите ваше имя.</div>
+                        </div>
+                        <!-- Фамилия -->
+                        <div class="mb-3">
+                            <label for="id_last_name" class="form-label">Фамилия</label>
+                            <input type="text" class="form-control" id="id_last_name" name="last_name" required>
+                            <div class="invalid-feedback">Пожалуйста, укажите вашу фамилию.</div>
+                        </div>
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="id_email" name="email" required>
+                            <div class="invalid-feedback">Пожалуйста, укажите корректный email.</div>
+                        </div>
+                        <!-- Телефон -->
+                        <div class="mb-3">
+                            <label for="id_phone" class="form-label">Телефон</label>
+                            <input type="tel" class="form-control" id="id_phone" name="phone" pattern="\+?[0-9]{10,15}"
+                                   required>
+                            <div class="invalid-feedback">Пример: +79991234567</div>
+                        </div>
+                        <!-- Адрес -->
+                        <div class="mb-3">
+                            <label for="id_address" class="form-label">Адрес доставки</label>
+                            <textarea class="form-control" id="id_address" name="address" rows="3" required></textarea>
+                            <div class="invalid-feedback">Пожалуйста, укажите адрес доставки.</div>
+                        </div>
+                        <!-- Кнопка -->
+                        <button type="submit" class="btn btn-primary checkout-btn">
+                            <i class="fas fa-check me-2"></i>Подтвердить заказ
+                        </button>
+                    </form>
+                </div>
 
-            <!-- Правая колонка: содержимое корзины -->
-            <div class="col-md-6">
-                <div class="order-summary">
-                    <h4 class="mb-4">Ваш заказ</h4>
-                    <ul class="list-group mb-3 order-items">
-                        {% for item in cart.get_cart_items %}
-                        <li class="list-group-item d-flex justify-content-between lh-sm">
-                            <div>
-                                <h6 class="my-0">{{ item.product.name }}</h6>
-                                <small class="text-muted">{{ item.quantity }} шт. × {{ item.product.price }} ₽</small>
-                            </div>
-                            <span class="text-muted">{{ item.get_cost }} ₽</span>
-                        </li>
-                        {% endfor %}
-                        <li class="list-group-item d-flex justify-content-between total">
-                            <span>Общая сумма</span>
-                            <strong>{{ cart.get_total_price }} ₽</strong>
-                        </li>
-                    </ul>
+                <!-- Правая колонка: содержимое корзины -->
+                <div class="col-md-6">
+                    <div class="order-summary">
+                        <h4 class="mb-4">Ваш заказ</h4>
+                        <ul class="list-group mb-3 order-items" id="order-summary">
+                            {% for item in cart.get_cart_items %}
+                                <li class="list-group-item d-flex justify-content-between lh-sm">
+                                    <div>
+                                        <h6 class="my-0">{{ item.product.name }}</h6>
+                                        <small class="text-muted">{{ item.quantity }} шт. × {{ item.product.price }}
+                                            ₽</small>
+                                    </div>
+                                    <span class="text-muted">{{ item.get_cost }} ₽</span>
+                                </li>
+                            {% endfor %}
+                            <li class="list-group-item d-flex justify-content-between total">
+                                <span>Общая сумма</span>
+                                <strong>{{ cart.get_total_price }} ₽</strong>
+                            </li>
+                        </ul>
+                        <!-- Предупреждение о недоступных товарах -->
+                        <div id="cart-warnings" class="alert alert-warning d-none" role="alert">
+                            Некоторые товары в корзине недоступны. Пожалуйста, проверьте корзину.
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Валидация формы -->
+{% endblock %}
+{% block scripts %}
+    <!-- Валидация формы и проверка корзины -->
     <script>
         (() => {
             'use strict';
-            const forms = document.querySelectorAll('.needs-validation');
-            Array.from(forms).forEach(form => {
-                form.addEventListener('submit', event => {
-                    if (!form.checkValidity()) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
+            const form = document.querySelector('.checkout-form');
+
+            // Валидация формы
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (!form.checkValidity()) {
                     form.classList.add('was-validated');
-                }, false);
-            });
+                    return;
+                }
+
+                // Проверяем доступность товаров перед отправкой
+                const response = await fetch("{% url 'cart_validate' %}");
+                const data = await response.json();
+
+                if (!data.all_available) {
+                    document.getElementById('cart-warnings').classList.remove('d-none');
+                    return;
+                }
+
+                form.submit();
+            }, false);
         })();
     </script>
-</div>
 {% endblock %}

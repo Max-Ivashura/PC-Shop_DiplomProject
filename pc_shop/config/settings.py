@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'mptt',
     'jazzmin',
+    'sorl.thumbnail'
 ]
 
 MIDDLEWARE = [
@@ -119,3 +120,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Вывод в консоль
 DEFAULT_FROM_EMAIL = 'noreply@pcshop.ru'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',  # Отключает кэш
+    }
+}

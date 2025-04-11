@@ -1,26 +1,89 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Заказ оформлен{% endblock %}
+{% block title %}Заказ №{{ order.id }} оформлен{% endblock %}
 {% block css %}
 <link rel="stylesheet" href="{% static 'cart/css/success.css' %}">
 {% endblock %}
 {% block content %}
 <!-- Уникальный контейнер для изоляции стилей -->
 <div class="success-container">
-    <div class="container text-center my-5">
-        <div class="card shadow-lg p-5 bg-light success-card">
-            <div class="success-icon">
-                <i class="fas fa-check-circle fa-3x text-success"></i>
+    <div class="container my-5">
+        <div class="card shadow-lg p-4 bg-light success-card">
+            <div class="text-center mb-4">
+                <i class="fas fa-check-circle fa-4x text-success"></i>
+                <h2 class="mt-3 success-title">Заказ №{{ order.id }} оформлен!</h2>
+                <p class="lead success-message">
+                    Спасибо за вашу покупку, {{ order.first_name }}!<br>
+                    Подтверждение отправлено на {{ order.email }}
+                </p>
             </div>
-            <h2 class="mt-4 success-title">Заказ оформлен!</h2>
-            <p class="lead success-message">
-                Номер вашего заказа: <strong>{{ order.id }}</strong>.<br>
-                Спасибо за покупку!
-            </p>
-            <a href="{% url 'home' %}" class="btn btn-primary success-btn">
-                <i class="fas fa-home me-2"></i>Вернуться на главную
-            </a>
+
+            <!-- Детали заказа -->
+            <div class="order-details">
+                <h5 class="mb-3">Детали заказа:</h5>
+                <div class="table-responsive">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th>Товары</th>
+                                <td>
+                                    {% for item in order.items.all %}
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ item.product.name }} ({{ item.quantity }} шт.)</span>
+                                        <span>{{ item.price }} ₽</span>
+                                    </div>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Общая сумма</th>
+                                <td class="text-end">{{ order.get_total_cost }} ₽</td>
+                            </tr>
+                            <tr>
+                                <th>Адрес доставки</th>
+                                <td>{{ order.address }}</td>
+                            </tr>
+                            <tr>
+                                <th>Статус</th>
+                                <td class="text-success">В обработке</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Кнопки навигации -->
+            <div class="text-center mt-4">
+                <a href="{% url 'home' %}" class="btn btn-primary me-3">
+                    <i class="fas fa-home me-2"></i>Вернуться на главную
+                </a>
+                <a href="{% url 'account_orders' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list me-2"></i>Мои заказы
+                </a>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<!-- Микроразметка для SEO -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Order",
+    "orderNumber": "{{ order.id }}",
+    "priceCurrency": "RUB",
+    "price": "{{ order.get_total_cost }}",
+    "acceptedOffer": {
+        "@type": "Offer",
+        "itemOffered": {
+            "@type": "Product",
+            "name": "{% for item in order.items.all %}{{ item.product.name }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+        },
+        "price": "{{ order.get_total_cost }}",
+        "priceCurrency": "RUB"
+    },
+    "url": "{{ request.build_absolute_uri }}"
+}
+</script>
 {% endblock %}

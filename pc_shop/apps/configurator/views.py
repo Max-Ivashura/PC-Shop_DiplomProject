@@ -1,11 +1,13 @@
 import json
 from apps.configurator.models import Build
-from apps.products.models import Product, Category
-from apps.products.models import Product, Category
+from apps.products.models import Product
+from apps.products.models import Product
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+
+from apps.catalog_config.models import Category
 
 
 @login_required
