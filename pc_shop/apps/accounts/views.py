@@ -65,7 +65,7 @@ def register(request):
 def profile(request):
     user = request.user
     # Убираем select_related('status'), так как это CharField
-    orders = user.order_set.all()  # Просто получаем все заказы без лишней оптимизации
+    orders = user.orders.all()  # Используем related_name из модели Order
     builds = user.builds.prefetch_related('components__product').all()
     reviews = user.review_set.select_related('product').all()
 
