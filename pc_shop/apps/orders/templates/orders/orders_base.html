@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'orders/css/orders.css' %}">
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script src="{% static 'orders/js/orders.js' %}"></script>
+{% endblock %}
