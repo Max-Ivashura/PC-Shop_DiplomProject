@@ -31,9 +31,10 @@ class Category(MPTTModel):
         return self.name
 
     def save(self, *args, **kwargs):
-        # Генерация пути при сохранении
+        super().save(*args, **kwargs)
+        # Теперь можно вызывать MPTT-методы
         ancestors = self.get_ancestors(include_self=True)
-        self.path = ' > '.join(ancestors.values_list('name', flat=True))
+        self.path = ' > '.join(ancestor.name for ancestor in ancestors)
         super().save(*args, **kwargs)
 
     def get_all_attributes(self):

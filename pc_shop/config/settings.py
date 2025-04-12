@@ -102,7 +102,9 @@ LANGUAGE_CODE = 'ru-RU'
 TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
-USE_L10N = True
+
+DATE_INPUT_FORMATS = ['%d.%m.%Y', '%Y-%m-%d']  # Поддерживаемые форматы
+USE_L10N = False  # Отключаем локализацию, если мешает
 
 USE_TZ = True
 
@@ -117,6 +119,8 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'accounts.CustomUser'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Вывод в консоль
 DEFAULT_FROM_EMAIL = 'noreply@pcshop.ru'

@@ -10,19 +10,19 @@
                 <!-- Меню слева -->
                 <div class="col-lg-3 mb-4">
                     <nav class="menu-sidebar shadow-sm">
-                        <a href="{% url 'profile' %}" class="menu-item active">
+                        <a href="{% url 'accounts:profile' %}" class="menu-item active">
                             <i class="fas fa-user me-3"></i> Мой профиль
                         </a>
-                        <a href="{% url 'edit_profile' %}" class="menu-item">
+                        <a href="{% url 'accounts:edit_profile' %}" class="menu-item">
                             <i class="fas fa-pencil-alt me-3"></i> Редактировать данные
                         </a>
-                        <a href="{% url 'change_password' %}" class="menu-item">
+                        <a href="{% url 'accounts:change_password' %}" class="menu-item">
                             <i class="fas fa-lock me-3"></i> Сменить пароль
                         </a>
-                        <a href="{% url 'wishlist' %}" class="menu-item">
+                        <a href="{% url 'accounts:wishlist' %}" class="menu-item">
                             <i class="fas fa-heart me-3"></i> Список желаний
                         </a>
-                        <a href="{% url 'user_builds' %}" class="menu-item">
+                        <a href="{% url 'accounts:user_builds' %}" class="menu-item">
                             <i class="fas fa-cubes me-3"></i> Мои сборки
                         </a>
                     </nav>
@@ -35,7 +35,8 @@
                             <!-- Блок приветствия -->
                             <div class="d-flex align-items-center mb-4">
                                 <div class="flex-shrink-0">
-                                    <img src="{% if user.userprofile.avatar %}{{ user.userprofile.avatar.url }}{% else %}{% static 'images/avatar.png' %}{% endif %}"
+                                    <img src="
+                                            {% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'images/avatar.png' %}{% endif %}"
                                          alt="Аватар"
                                          class="avatar-img rounded-circle shadow"
                                          style="width: 150px; height: 150px;">
@@ -51,7 +52,7 @@
                                     </h3>
                                     <p class="text-muted mb-0">{{ user.email }}</p>
                                 </div>
-                                <a href="{% url 'edit_profile' %}" class="btn btn-outline-primary ms-auto">
+                                <a href="{% url 'accounts:edit_profile' %}" class="btn btn-outline-primary ms-auto">
                                     <i class="fas fa-edit me-2"></i> Редактировать
                                 </a>
                             </div>
@@ -71,8 +72,8 @@
                                             </p>
                                             <p class="mb-1">
                                                 <i class="fas fa-calendar me-2"></i>
-                                                {% if user.userprofile.birth_date %}
-                                                    {{ user.userprofile.birth_date|date:"d.m.Y" }}
+                                                {% if user.birth_date %}
+                                                    {{ user.birth_date|date:"d.m.Y" }}
                                                 {% else %}
                                                     Дата рождения не указана
                                                 {% endif %}
@@ -89,11 +90,11 @@
                                             </h5>
                                             <p class="mb-1">
                                                 <i class="fas fa-phone me-2"></i>
-                                                {{ user.userprofile.phone|default:"Не указано" }}
+                                                {{ user.phone|default:"Не указано" }}
                                             </p>
                                             <p class="mb-1">
                                                 <i class="fas fa-map-marker-alt me-2"></i>
-                                                {{ user.userprofile.address|default:"Не указано" }}
+                                                {{ user.address|default:"Не указано" }}
                                             </p>
                                         </div>
                                     </div>

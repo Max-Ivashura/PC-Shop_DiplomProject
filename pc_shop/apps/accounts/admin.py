@@ -1,49 +1,72 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import User
-from .models import UserProfile, Wishlist, WishlistItem
+from apps.accounts.models import CustomUser, Wishlist, WishlistItem
 
-# --- Инлайн для профиля пользователя ---
-class UserProfileInline(admin.StackedInline):
-    model = UserProfile
-    can_delete = False
-    verbose_name_plural = 'Профиль'
-    readonly_fields = ('is_adult',)  # Метод из модели
 
-    # Добавляем метод is_adult в поля инлайна
-    def get_fields(self, request, obj=None):
-        fields = super().get_fields(request, obj)
-        return fields + ('is_adult',)
-
-# --- Кастомизация админки User ---
+# --- Кастомная админка для пользователя ---
+@admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    inlines = (UserProfileInline,)
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'profile_info')
-    list_select_related = ('userprofile',)  # Оптимизация запросов
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Персональная информация', {
+            'fields': ('first_name', 'last_name', 'email', 'phone', 'address', 'birth_date', 'avatar')
+        }),
+        ('Права доступа', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+        }),
+        ('Даты', {'fields': ('last_login', 'date_joined')}),
+    )
 
-    # Кастомное поле для отображения информации из профиля
-    def profile_info(self, obj):
-        return f"Телефон: {obj.userprofile.phone}, Адрес: {obj.userprofile.address}"
-    profile_info.short_description = "Профиль"
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'password1', 'password2'),
+        }),
+    )
+
+    list_display = (
+        'username',
+        'email',
+        'phone',
+        'is_staff',
+        'is_adult_display'
+    )
+
+    list_filter = ('is_staff', 'is_superuser', 'is_active')
+    search_fields = ('username', 'email', 'phone', 'first_name', 'last_name')
+    readonly_fields = ('last_login', 'date_joined', 'is_adult_display')
+    ordering = ('-date_joined',)
+
+    def is_adult_display(self, obj):
+        return "Да" if obj.is_adult else "Нет"
+
+    is_adult_display.short_description = "Совершеннолетний"
+
 
 # --- Админка для Wishlist ---
 @admin.register(Wishlist)
 class WishlistAdmin(admin.ModelAdmin):
-    list_display = ('user', 'created_at', 'updated_at', 'total_products')
-    list_filter = ('created_at',)
+    list_display = ('user', 'created_at', 'total_products')
+    list_select_related = ('user',)
+    search_fields = ('user__username', 'user__email')
 
     def total_products(self, obj):
         return obj.wishlistitem_set.count()
 
-    total_products.short_description = "Количество товаров"
+    total_products.short_description = "Товаров"
+
 
 # --- Админка для WishlistItem ---
 @admin.register(WishlistItem)
 class WishlistItemAdmin(admin.ModelAdmin):
-    list_display = ('wishlist', 'product', 'added_at')
-    list_filter = ('added_at',)
-    search_fields = ('wishlist__user__username', 'product__name')
+    list_display = ('product', 'user', 'added_at')
+    list_select_related = ('product', 'wishlist__user')
+    search_fields = (
+        'product__name',
+        'wishlist__user__username'
+    )
 
-# --- Регистрация моделей ---
-admin.site.unregister(User)
-admin.site.register(User, CustomUserAdmin)
+    def user(self, obj):
+        return obj.wishlist.user
+
+    user.short_description = "Пользователь"

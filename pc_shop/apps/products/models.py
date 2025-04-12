@@ -145,7 +145,7 @@ class ProductImage(models.Model):
 
 
 class Review(models.Model):
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    user = models.ForeignKey('accounts.CustomUser', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     text = models.TextField("Отзыв")
     rating = models.PositiveSmallIntegerField(

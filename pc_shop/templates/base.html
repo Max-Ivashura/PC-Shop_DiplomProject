@@ -53,7 +53,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if 'wishlist' in request.path %}active{% endif %}"
-                       href="{% url 'wishlist' %}">
+                       href="{% url 'accounts:wishlist' %}">
                         <i class="fas fa-heart me-1"></i>Желания
                     </a>
                 </li>
@@ -83,11 +83,11 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                         {% if user.is_authenticated %}
-                            <li><a class="dropdown-item" href="{% url 'profile' %}">Профиль</a></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">Выход</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Профиль</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">Выход</a></li>
                         {% else %}
-                            <li><a class="dropdown-item" href="{% url 'login' %}">Вход</a></li>
-                            <li><a class="dropdown-item" href="{% url 'register' %}">Регистрация</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:login' %}">Вход</a></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:register' %}">Регистрация</a></li>
                         {% endif %}
                     </ul>
                 </div>

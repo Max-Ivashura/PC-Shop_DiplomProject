@@ -20,7 +20,12 @@
                             <!-- Текущая аватарка -->
                             <div class="avatar-preview mb-3">
                                 <label for="id_avatar">
-                                    <img src="{% if user.userprofile.avatar %}{{ user.userprofile.avatar.url }}{% else %}{% static 'images/avatar.png' %}{% endif %}"
+                                    <img src="
+
+
+
+
+                                            {% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'images/avatar.png' %}{% endif %}"
                                          alt="Аватар"
                                          class="rounded-circle avatar-img">
                                 </label>
@@ -28,17 +33,17 @@
 
                             <!-- Поле загрузки -->
                             <div class="mb-3">
-                                <label for="{{ profile_form.avatar.id_for_label }}" class="form-label visually-hidden">
+                                <label for="{{ form.avatar.id_for_label }}" class="form-label visually-hidden">
                                     Выберите аватар
                                 </label>
-                                {{ profile_form.avatar }}
-                                {% if profile_form.avatar.errors %}
-                                    <div class="invalid-feedback d-block">{{ profile_form.avatar.errors.0 }}</div>
+                                {{ form.avatar }}
+                                {% if form.avatar.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.avatar.errors.0 }}</div>
                                 {% endif %}
                             </div>
 
                             <div class="form-text text-muted small">
-                                Поддерживаемые форматы: JPG, JPEG, PNG. Максимальный размер: 5 МБ
+                                Поддерживаемые форматы: JPG, JPEG, PNG. Максимальный размер: 2 МБ
                             </div>
                         </div>
                     </div>
@@ -52,120 +57,116 @@
                         </div>
                     {% endif %}
 
-                    <form method="post" class="edit-profile-form">
-                        {% csrf_token %}
-
-                        <!-- Основные данные -->
-                        <div class="card mb-4">
-                            <div class="card-header bg-light d-flex align-items-center">
-                                <i class="fas fa-user me-2"></i> Основная информация
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <!-- Имя -->
-                                    <div class="col-md-6">
-                                        <label for="{{ user_form.first_name.id_for_label }}" class="form-label">
-                                            Имя
-                                            {% if user_form.first_name.field.required %}
-                                                <span class="text-danger">*</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ user_form.first_name }}
-                                        {% if user_form.first_name.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ user_form.first_name.errors.0 }}
-                                            </div>
+                    <!-- Основные данные -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex align-items-center">
+                            <i class="fas fa-user me-2"></i> Основная информация
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Имя -->
+                                <div class="col-md-6">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                        Имя
+                                        {% if form.first_name.field.required %}
+                                            <span class="text-danger">*</span>
                                         {% endif %}
-                                    </div>
+                                    </label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.first_name.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
 
-                                    <!-- Фамилия -->
-                                    <div class="col-md-6">
-                                        <label for="{{ user_form.last_name.id_for_label }}" class="form-label">
-                                            Фамилия
-                                            {% if user_form.last_name.field.required %}
-                                                <span class="text-danger">*</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ user_form.last_name }}
-                                        {% if user_form.last_name.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ user_form.last_name.errors.0 }}
-                                            </div>
+                                <!-- Фамилия -->
+                                <div class="col-md-6">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                        Фамилия
+                                        {% if form.last_name.field.required %}
+                                            <span class="text-danger">*</span>
                                         {% endif %}
-                                    </div>
+                                    </label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.last_name.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
 
-                                    <!-- Email -->
-                                    <div class="col-12">
-                                        <label for="{{ user_form.email.id_for_label }}" class="form-label">
-                                            Email
-                                            {% if user_form.email.field.required %}
-                                                <span class="text-danger">*</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ user_form.email }}
-                                        {% if user_form.email.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ user_form.email.errors.0 }}
-                                            </div>
+                                <!-- Email -->
+                                <div class="col-12">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        Email
+                                        {% if form.email.field.required %}
+                                            <span class="text-danger">*</span>
                                         {% endif %}
-                                    </div>
+                                    </label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.email.errors.0 }}
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Контактные данные -->
-                        <div class="card mb-4">
-                            <div class="card-header bg-light d-flex align-items-center">
-                                <i class="fas fa-address-book me-2"></i> Контактная информация
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <!-- Телефон -->
-                                    <div class="col-md-6">
-                                        <label for="{{ profile_form.phone.id_for_label }}" class="form-label">
-                                            Телефон
-                                        </label>
-                                        {{ profile_form.phone }}
-                                        {% if profile_form.phone.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ profile_form.phone.errors.0 }}
-                                            </div>
-                                        {% endif %}
-                                    </div>
+                    <!-- Контактные данные -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex align-items-center">
+                            <i class="fas fa-address-book me-2"></i> Контактная информация
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Телефон -->
+                                <div class="col-md-6">
+                                    <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                        Телефон
+                                    </label>
+                                    {{ form.phone }}
+                                    {% if form.phone.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.phone.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
 
-                                    <!-- Дата рождения -->
-                                    <div class="col-md-6">
-                                        <label for="{{ profile_form.birth_date.id_for_label }}" class="form-label">
-                                            Дата рождения
-                                        </label>
-                                        {{ profile_form.birth_date }}
-                                        {% if profile_form.birth_date.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ profile_form.birth_date.errors.0 }}
-                                            </div>
-                                        {% endif %}
-                                    </div>
+                                <!-- Дата рождения -->
+                                <div class="col-md-6">
+                                    <label for="{{ form.birth_date.id_for_label }}" class="form-label">
+                                        Дата рождения
+                                    </label>
+                                    {{ form.birth_date }}
+                                    {% if form.birth_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.birth_date.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
 
-                                    <!-- Адрес -->
-                                    <div class="col-12">
-                                        <label for="{{ profile_form.address.id_for_label }}" class="form-label">
-                                            Адрес
-                                        </label>
-                                        {{ profile_form.address }}
-                                        {% if profile_form.address.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ profile_form.address.errors.0 }}
-                                            </div>
-                                        {% endif %}
-                                    </div>
+                                <!-- Адрес -->
+                                <div class="col-12">
+                                    <label for="{{ form.address.id_for_label }}" class="form-label">
+                                        Адрес
+                                    </label>
+                                    {{ form.address }}
+                                    {% if form.address.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.address.errors.0 }}
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <i class="fas fa-save me-2"></i> Сохранить изменения
-                        </button>
-                    </form>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-save me-2"></i> Сохранить изменения
+                    </button>
                 </div>
             </div>
         </div>
@@ -180,10 +181,18 @@
             // Маска для телефона
             $('#id_phone').inputmask({
                 mask: '+7 (999) 999-99-99',
-                placeholder: '_',
-                clearMaskOnLostFocus: true,
+                placeholder: ' ',
                 showMaskOnHover: true,
-                removeMaskOnSubmit: true
+                clearIncomplete: true,  // Разрешает частичный ввод
+                greedy: false,
+                onBeforePaste: function (pastedValue) {
+                    // Автоматически добавляем +7 при вставке
+                    pastedValue = pastedValue.replace(/\D/g, '');
+                    if (pastedValue.startsWith('7') || pastedValue.startsWith('8') || pastedValue.startsWith('9')) {
+                        return '+7' + pastedValue.slice(-10);
+                    }
+                    return pastedValue;
+                }
             });
 
             // Предпросмотр аватарки
