@@ -58,7 +58,7 @@ def profile(request):
     context = {
         'orders': request.user.orders.all(),
         'builds': Build.objects.filter(user=request.user).prefetch_related('components'),
-        'reviews': request.user.review_set.all(),
+        'reviews': request.user.reviews.all(),
     }
     return render(request, 'accounts/profile.html', context)
 

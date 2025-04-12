@@ -4,7 +4,6 @@
 
 {% block css %}
     <link rel="stylesheet" href="{% static 'products/css/product_detail.css' %}">
-    <!-- Подключение LazyLoad -->
     <script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.8.3/dist/lazyload.min.js"></script>
 {% endblock %}
 
@@ -16,65 +15,86 @@
                 <div class="product-gallery">
                     <!-- Основное изображение -->
                     <div class="main-image">
-                        {% if main_image %}
-                            <img src="{{ main_image.image.url }}"
-                                 alt="{{ product.name }}"
-                                 class="img-fluid rounded lazy"
-                                 itemprop="image"
-                                 id="mainImage">
-                        {% else %}
-                            <div class="no-image">Нет изображений</div>
-                        {% endif %}
+                        {% with main_image=product.main_image %}
+                            {% if main_image %}
+                                <img src="{{ main_image.image.url }}"
+                                     alt="{{ product.name }}"
+                                     class="img-fluid rounded lazy"
+                                     itemprop="image"
+                                     id="mainImage">
+                            {% else %}
+                                <div class="no-image alert alert-secondary">
+                                    <i class="fas fa-image me-2"></i>Нет изображений
+                                </div>
+                            {% endif %}
+                        {% endwith %}
                     </div>
 
                     <!-- Миниатюры -->
-                    <div class="thumbnails d-flex gap-2 mt-3">
-                        {% for image in product.images.all %}
-                            <div class="thumbnail-item {% if forloop.first %}active{% endif %}"
-                                 onclick="changeMainImage('{{ image.image.url }}', this)">
-                                <img src="{{ image.get_thumbnail_url }}"
-                                     data-src="{{ image.image.url }}"
-                                     class="img-thumbnail lazy"
-                                     alt="{{ product.name }} - миниатюра">
-                            </div>
-                        {% endfor %}
-                    </div>
+                    {% if product.images.count > 1 %}
+                        <div class="thumbnails d-flex gap-2 mt-3">
+                            {% for image in product.images.all %}
+                                <div class="thumbnail-item {% if image.is_main %}active{% endif %}"
+                                     onclick="changeMainImage('{{ image.image.url }}', this)">
+                                    <img src="{{ image.get_thumbnail_url }}"
+                                         data-src="{{ image.image.url }}"
+                                         class="img-thumbnail lazy"
+                                         alt="{{ product.name }} - миниатюра {{ forloop.counter }}">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 
             <!-- Правая колонка - Описание и действия -->
             <div class="col-md-6">
-                <h1 class="product-title" itemprop="name">{{ product.name }}</h1>
+                <div class="product-header mb-4">
+                    <h1 class="product-title" itemprop="name">{{ product.name }}</h1>
+                    <div class="product-meta">
+                        <div class="sku mb-2" itemprop="sku">
+                            <i class="fas fa-barcode me-2"></i><strong>Артикул:</strong> {{ product.sku }}
+                        </div>
+                        {% if product.is_digital %}
+                            <div class="digital-badge badge bg-info">
+                                <i class="fas fa-download me-2"></i>Цифровой товар
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
 
                 <!-- Блок цены -->
                 <div class="product-price mb-4" itemprop="offers" itemscope itemtype="http://schema.org/Offer">
-                    <span class="h3 text-primary" itemprop="price">{{ product.price }}</span>
-                    <meta itemprop="priceCurrency" content="RUB">
-                    ₽
-                    {% if product.old_price %}
-                        <del class="ms-2 text-muted">{{ product.old_price }} ₽</del>
+                    <div class="d-flex align-items-center">
+                        <span class="h2 text-primary me-2" itemprop="price">{{ product.price }}</span>
+                        <span class="h4" itemprop="priceCurrency">₽</span>
+                        <meta itemprop="priceValidUntil" content="{{ product.updated_at|date:'Y-m-d' }}">
+                        <link itemprop="availability"
+                              href="{% if product.is_available %}http://schema.org/InStock{% else %}http://schema.org/OutOfStock{% endif %}">
+                    </div>
+                    {% if product.quantity < 10 and product.quantity > 0 %}
+                        <div class="text-warning small mt-1">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Осталось всего {{ product.quantity }} шт.
+                        </div>
                     {% endif %}
                 </div>
 
                 <!-- Фиксированная панель действий -->
                 <div class="action-panel sticky-top mt-4">
                     <div class="d-grid gap-3">
-                        <!-- Кнопка в корзину -->
                         <button class="btn btn-primary btn-lg add-to-cart w-100"
                                 data-product-id="{{ product.id }}"
-                                data-product-name="{{ product.name }}"
-                                data-product-price="{{ product.price }}">
-                            <i class="fas fa-shopping-cart me-2"></i>В корзину
+                                {% if not product.is_available %}disabled{% endif %}>
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            {% if product.is_available %}В корзину{% else %}Нет в наличии{% endif %}
                         </button>
 
                         <div class="d-grid gap-2">
-                            <!-- Кнопка в список желаний -->
                             <button class="btn btn-outline-danger btn-lg w-100 add-to-wishlist"
                                     data-product-id="{{ product.id }}">
                                 <i class="fas fa-heart me-2"></i>В список желаний
                             </button>
 
-                            <!-- Кнопка сравнения -->
                             <button class="btn btn-outline-primary btn-lg w-100 add-to-compare"
                                     data-product-id="{{ product.id }}">
                                 <i class="fas fa-balance-scale me-2"></i>Сравнить
@@ -91,12 +111,14 @@
                                 type="button" role="tab">Описание
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="specs-tab"
-                                data-bs-toggle="tab" data-bs-target="#specs"
-                                type="button" role="tab">Характеристики
-                        </button>
-                    </li>
+                    {% if grouped_attributes %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="specs-tab"
+                                    data-bs-toggle="tab" data-bs-target="#specs"
+                                    type="button" role="tab">Характеристики
+                            </button>
+                        </li>
+                    {% endif %}
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="reviews-tab"
                                 data-bs-toggle="tab" data-bs-target="#reviews"
@@ -109,33 +131,40 @@
                 <div class="tab-content mt-3" id="productTabsContent">
                     <!-- Описание -->
                     <div class="tab-pane fade show active" id="description" role="tabpanel">
-                        {{ product.description|safe }}
+                        {% if product.description %}
+                            {{ product.description|safe }}
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>Описание товара отсутствует
+                            </div>
+                        {% endif %}
                     </div>
 
                     <!-- Характеристики -->
-                    {% cache 300 product_specs product.id %}
-                        <div class="tab-pane fade" id="specs" role="tabpanel">
-                            {% for group, attributes in grouped_attributes %}
-                                <div class="specs-group">
-                                    <h5 class="border-bottom pb-2 mb-3">{{ group }}</h5>
-                                    <ul class="specs-list">
-                                        {% for attr in attributes %}
-                                            <li class="specs-item">
-                                                <strong>{{ attr.attribute.name }}:</strong>
-                                                <span>{{ attr.value }}</span>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endcache %}
+                    {% if grouped_attributes %}
+                        {% cache 300 product_specs product.id %}
+                            <div class="tab-pane fade" id="specs" role="tabpanel">
+                                {% for group, attributes in grouped_attributes %}
+                                    <div class="specs-group mb-4">
+                                        <h5 class="border-bottom pb-2 mb-3">{{ group.name }}</h5>
+                                        <dl class="row specs-list">
+                                            {% for attr in attributes %}
+                                                <dt class="col-sm-4">{{ attr.attribute.name }}</dt>
+                                                <dd class="col-sm-8">{{ attr.value }}{% if attr.attribute.unit %}
+                                                    {{ attr.attribute.unit }}{% endif %}</dd>
+                                            {% endfor %}
+                                        </dl>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endcache %}
+                    {% endif %}
 
                     <!-- Отзывы -->
                     <div class="tab-pane fade" id="reviews" role="tabpanel">
                         <div class="mt-4">
-                            <h4>Оставьте отзыв</h4>
-                            <form id="reviewForm">
+                            <h4><i class="fas fa-comments me-2"></i>Оставьте отзыв</h4>
+                            <form id="reviewForm" class="mb-5">
                                 <div class="mb-3">
                                     <textarea class="form-control" rows="3"
                                               placeholder="Ваш отзыв..."
@@ -143,37 +172,42 @@
                                               required></textarea>
                                 </div>
                                 <div class="rating mb-3">
-                                    <input type="radio" id="star5" name="rating" value="5" required>
-                                    <label for="star5"></label>
-                                    <input type="radio" id="star4" name="rating" value="4">
-                                    <label for="star4"></label>
-                                    <input type="radio" id="star3" name="rating" value="3">
-                                    <label for="star3"></label>
-                                    <input type="radio" id="star2" name="rating" value="2">
-                                    <label for="star2"></label>
-                                    <input type="radio" id="star1" name="rating" value="1">
-                                    <label for="star1"></label>
+                                    {% for i in "54321" %}
+                                        <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}"
+                                               {% if forloop.first %}required{% endif %}>
+                                        <label for="star{{ i }}"></label>
+                                    {% endfor %}
                                 </div>
-                                <button type="submit" class="btn btn-primary">Отправить</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-2"></i>Отправить
+                                </button>
                             </form>
 
                             <!-- Список отзывов -->
                             <div class="reviews-list mt-4">
-                                {% for review in product.reviews.all %}
-                                    <div class="review-item" itemprop="review" itemscope
-                                         itemtype="http://schema.org/Review">
-                                        <div class="rating">
-                                            {% for _ in 1..review.rating %}
-                                                ★
-                                            {% endfor %}
+                                {% if product.reviews.exists %}
+                                    {% for review in product.reviews.all %}
+                                        <div class="review-item card mb-3" itemprop="review" itemscope
+                                             itemtype="http://schema.org/Review">
+                                            <div class="card-body">
+                                                <div class="rating text-warning mb-2">
+                                                    {% for _ in review.rating|get_range %}
+                                                        ★
+                                                    {% endfor %}
+                                                </div>
+                                                <p class="mb-1" itemprop="description">{{ review.text }}</p>
+                                                <div class="text-muted small">
+                                                    <span itemprop="author">{{ review.user.get_full_name|default:review.user.username }}</span>,
+                                                    <time itemprop="datePublished">{{ review.created_at|date:"d.m.Y H:i" }}</time>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <p class="mb-1" itemprop="description">{{ review.text }}</p>
-                                        <small class="text-muted">
-                                            <span itemprop="author">{{ review.user.username }}</span>,
-                                            <time itemprop="datePublished">{{ review.created_at }}</time>
-                                        </small>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>Пока нет отзывов
                                     </div>
-                                {% endfor %}
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -186,21 +220,31 @@
     <script>
         // Ленивая загрузка изображений
         new LazyLoad({
-            elements_selector: ".lazy"
+            elements_selector: ".lazy",
+            threshold: 100
         });
 
         // Галерея
         function changeMainImage(url, element) {
-            document.getElementById('mainImage').src = url;
+            const mainImg = document.getElementById('mainImage');
+            mainImg.src = url;
+            mainImg.classList.add('fade-in');
+            setTimeout(() => mainImg.classList.remove('fade-in'), 300);
+
             document.querySelectorAll('.thumbnail-item').forEach(item => {
                 item.classList.remove('active');
             });
-            element.parentElement.classList.add('active');
+            element.classList.add('active');
         }
 
         // Отправка отзыва
         document.getElementById('reviewForm').addEventListener('submit', function (e) {
             e.preventDefault();
+            const form = this;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Отправка...';
+
             fetch('{% url "add_review" product.id %}', {
                 method: 'POST',
                 headers: {
@@ -208,15 +252,39 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    text: this.text.value,
-                    rating: this.rating.value
+                    text: form.text.value,
+                    rating: form.rating.value
                 })
-            }).then(response => {
-                if (response.ok) {
-                    location.reload();
-                }
-            });
+            })
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error('Ошибка сети');
+                })
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        showAlert(data.error || 'Ошибка при отправке отзыва', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Произошла ошибка. Попробуйте позже.', 'danger');
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Отправить';
+                });
         });
 
+        function showAlert(message, type = 'success') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.role = "alert";
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.getElementById('reviews').prepend(alert);
+        }
     </script>
 {% endblock %}

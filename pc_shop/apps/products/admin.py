@@ -1,11 +1,12 @@
-# admin.py
 from django.contrib import admin
 from django.contrib.admin import RelatedFieldListFilter
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django.db.models import OuterRef, Subquery, Prefetch
+from django.db.models import Prefetch
 from .models import Product, ProductImage, Review
 from apps.catalog_config.models import ProductAttributeValue, Attribute
+from django.core.exceptions import ValidationError
+import time
 
 
 class ProductImageInline(admin.TabularInline):
@@ -24,24 +25,26 @@ class ProductImageInline(admin.TabularInline):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        '__str__',
-        'main_image_preview',
+        'sku',
+        'name',
         'category_hierarchy',
         'price',
         'stock_status',
         'is_available',
+        'is_digital',
         'created_at'
     )
     list_filter = (
         'is_available',
+        'is_digital',
         ('category', admin.RelatedOnlyFieldListFilter),
         'created_at'
     )
     search_fields = (
+        'sku',
         'name',
         'description',
-        'category__name',
-        'category__path'
+        'category__name'
     )
     prepopulated_fields = {'slug': ('name',)}
     inlines = [ProductImageInline]
@@ -49,15 +52,18 @@ class ProductAdmin(admin.ModelAdmin):
     list_select_related = ('category',)
     date_hierarchy = 'created_at'
     actions = ['update_attributes']
+    autocomplete_fields = ['category']
 
     fieldsets = (
         (_("Основное"), {
             'fields': (
+                'sku',
                 'name',
                 'slug',
                 'category',
                 'price',
                 'description',
+                'is_digital',
                 'main_image_preview'
             )
         }),
@@ -72,7 +78,8 @@ class ProductAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related(
-            Prefetch('images', queryset=ProductImage.objects.order_by('-is_main'))
+            Prefetch('images', queryset=ProductImage.objects.order_by('-is_main')),
+            Prefetch('attributes', queryset=ProductAttributeValue.objects.select_related('attribute'))
         )
 
     def category_hierarchy(self, obj):
@@ -82,10 +89,10 @@ class ProductAdmin(admin.ModelAdmin):
 
     def stock_status(self, obj):
         if obj.quantity <= 0:
-            return format_html('<span style="color: red;">Нет в наличии</span>')
+            return format_html('<span style="color: red;">{}</span>', _("Нет в наличии"))
         if obj.quantity < 10:
-            return format_html(f'<span style="color: orange;">{obj.quantity} шт.</span>')
-        return format_html(f'<span style="color: green;">{obj.quantity} шт.</span>')
+            return format_html(f'<span style="color: orange;">{obj.quantity} {_("шт.")}</span>')
+        return format_html(f'<span style="color: green;">{obj.quantity} {_("шт.")}</span>')
 
     stock_status.short_description = _("Остаток")
 
@@ -103,8 +110,14 @@ class ProductAdmin(admin.ModelAdmin):
                     attribute=attr,
                     defaults={'value': attr.default_value()}
                 )
+        self.message_user(request, _("Атрибуты успешно обновлены"))
 
     update_attributes.short_description = _("Обновить атрибуты для выбранных товаров")
+
+    def save_model(self, request, obj, form, change):
+        if not obj.sku:
+            obj.sku = f"PRD-{obj.category.id}-{int(time.time())}"
+        super().save_model(request, obj, form, change)
 
     class Media:
         css = {'all': ('products/css/admin.css',)}
@@ -114,18 +127,24 @@ class ProductAdmin(admin.ModelAdmin):
 class ProductAttributeValueInline(admin.TabularInline):
     model = ProductAttributeValue
     extra = 0
-    readonly_fields = ('attribute_type',)
-    fields = ('attribute', 'value', 'attribute_type')
+    readonly_fields = ('attribute_type', 'validation_rules')
+    fields = ('attribute', 'value', 'attribute_type', 'validation_rules')
     autocomplete_fields = ('attribute',)
-    show_change_link = True
 
     def attribute_type(self, obj):
         return obj.attribute.get_data_type_display()
 
     attribute_type.short_description = _("Тип атрибута")
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related('attribute')
+    def validation_rules(self, obj):
+        rules = []
+        if obj.attribute.is_required:
+            rules.append(_("Обязательный"))
+        if obj.attribute.validation_regex:
+            rules.append(_("Регулярка: ") + obj.attribute.validation_regex)
+        return ", ".join(rules)
+
+    validation_rules.short_description = _("Правила валидации")
 
 
 @admin.register(Review)
@@ -136,6 +155,7 @@ class ReviewAdmin(admin.ModelAdmin):
     list_editable = ('approved',)
     autocomplete_fields = ('product', 'user')
     date_hierarchy = 'created_at'
+    list_select_related = ('product', 'user')
 
     def rating_stars(self, obj):
         return '★' * obj.rating + '☆' * (5 - obj.rating)
@@ -147,11 +167,12 @@ class ReviewAdmin(admin.ModelAdmin):
 class ProductAttributeValueAdmin(admin.ModelAdmin):
     list_display = ('product', 'attribute', 'value_type', 'value_preview')
     list_filter = (
-        'attribute__data_type',  # Фильтр по типу атрибута
-        ('attribute__groups__category', RelatedFieldListFilter),  # Исправленный фильтр
+        'attribute__data_type',
+        ('attribute__groups__category', RelatedFieldListFilter),
     )
     search_fields = ('product__name', 'attribute__name')
     autocomplete_fields = ('product', 'attribute')
+    raw_id_fields = ('product',)
 
     def value_type(self, obj):
         return obj.attribute.get_data_type_display()
@@ -159,8 +180,6 @@ class ProductAttributeValueAdmin(admin.ModelAdmin):
     value_type.short_description = _("Тип значения")
 
     def value_preview(self, obj):
-        if obj.attribute.data_type == 'enum':
-            return obj.value
-        return str(obj.value)
+        return str(obj.value)[:100]
 
     value_preview.short_description = _("Значение")

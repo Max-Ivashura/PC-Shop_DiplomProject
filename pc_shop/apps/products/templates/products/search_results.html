@@ -11,8 +11,14 @@
     <link rel="stylesheet" href="{% static 'products/css/product_list.css' %}">
     <style>
         .search-highlight {
-            background-color: #ffff00;
-            font-weight: bold;
+            background-color: #fff9c4;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .search-query {
+            color: #d32f2f;
+            font-weight: 500;
         }
     </style>
 {% endblock %}
@@ -20,70 +26,79 @@
 {% block content %}
     <div class="search-results-container" itemscope itemtype="http://schema.org/SearchResultsPage">
         <div class="container">
-            <div class="search-stats mb-4">
-                <h1 class="h3">Результаты поиска: "{{ query }}"</h1>
-                <p class="text-muted mb-0">
-                    Найдено: <strong>{{ products.count }}</strong> товаров
-                    {% if search_time %}(за {{ search_time|floatformat:2 }} сек){% endif %}
-                </p>
-            </div>
+            <!-- Шапка с статистикой -->
+            <div class="search-header mb-5">
+                <h1 class="h3 mb-3">
+                    Результаты поиска:
+                    <span class="search-query" itemprop="query">{{ query }}</span>
+                </h1>
+                <div class="d-flex justify-content-between align-items-center">
+                    <p class="text-muted mb-0">
+                        Найдено: <span itemprop="numberOfItems">{{ result_count }}</span> товаров
+                        {% if search_time %}(за {{ search_time|floatformat:2 }} сек){% endif %}
+                    </p>
 
-            <!-- Блок сортировки -->
-            <div class="d-flex justify-content-end mb-4">
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown">
-                        Сортировать:
-                        <span id="active-sort-label">
-                            {% if request.GET.sort == 'price_asc' %}
-                                по возрастанию цены
-                            {% elif request.GET.sort == 'price_desc' %}
-                                по убыванию цены
-                            {% elif request.GET.sort == 'newest' %}
-                                новинки
-                            {% else %}
-                                по умолчанию
-                            {% endif %}
-                        </span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a class="dropdown-item {% if request.GET.sort == 'price_asc' %}active{% endif %}"
-                               href="?{% url_replace q=query sort='price_asc' %}">
-                                Цена: по возрастанию
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item {% if request.GET.sort == 'price_desc' %}active{% endif %}"
-                               href="?{% url_replace q=query sort='price_desc' %}">
-                                Цена: по убыванию
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item {% if request.GET.sort == 'newest' %}active{% endif %}"
-                               href="?{% url_replace q=query sort='newest' %}">
-                                Новинки
-                            </a>
-                        </li>
-                    </ul>
+                    <!-- Сортировка -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown">
+                            Сортировать:
+                            <span id="active-sort-label">
+                                {% for option in sort_options %}
+                                    {% if request.GET.sort == option.key %}
+                                        {{ option.label }}
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% for option in sort_options %}
+                                <li>
+                                    <a class="dropdown-item {% if request.GET.sort == option.key %}active{% endif %}"
+                                       href="?{% url_replace q=query sort=option.key %}">
+                                        {{ option.label }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
             </div>
 
+            <!-- Результаты -->
             {% if products.exists %}
-                <div class="row" id="product-grid" itemprop="mainContentOfPage">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"
+                     id="product-grid"
+                     itemprop="mainContentOfPage">
                     {% for product in products %}
-                        <div class="col-md-4 mb-4">
+                        <div class="col" itemprop="itemListElement" itemscope itemtype="http://schema.org/Product">
                             {% include 'products/includes/product_card.html' with product=product highlight=query %}
                         </div>
                     {% endfor %}
                 </div>
 
                 <!-- Пагинация -->
-                {% include 'products/includes/pagination.html' %}
+                {% if page_obj.paginator.num_pages > 1 %}
+                    <div class="mt-5">
+                        {% include 'products/includes/pagination.html' %}
+                    </div>
+                {% endif %}
             {% else %}
+                <!-- Блок "Не найдено" -->
                 <div class="text-center py-5">
-                    <p>По запросу <strong>"{{ query }}"</strong> ничего не найдено.</p>
-                    <a href="{% url 'product_list' %}" class="btn btn-primary">Вернуться в каталог</a>
+                    <div class="empty-state-icon mb-4">
+                        <i class="fas fa-search fa-3x text-muted"></i>
+                    </div>
+                    <h4 class="mb-3">По запросу <strong>"{{ query }}"</strong> ничего не найдено</h4>
+                    <p class="text-muted mb-4">Попробуйте изменить поисковый запрос или воспользуйтесь каталогом</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'product_list' %}" class="btn btn-primary">
+                            <i class="fas fa-list me-2"></i>Перейти в каталог
+                        </a>
+                        <button onclick="window.history.back()" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Вернуться
+                        </button>
+                    </div>
                 </div>
             {% endif %}
         </div>
@@ -91,14 +106,24 @@
 {% endblock %}
 
 {% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.8.3/dist/lazyload.min.js"></script>
     <script>
-        // Подсветка совпадений
+        // Ленивая загрузка
+        new LazyLoad({
+            elements_selector: ".lazy",
+            threshold: 200
+        });
+
+        // Подсветка результатов
+        function highlightText(element, query) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            element.innerHTML = element.textContent.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
         document.querySelectorAll('.product-card').forEach(card => {
-            const text = card.innerText;
-            const regex = new RegExp('{{ query }}', 'gi');
-            card.innerHTML = text.replace(regex, match =>
-                `<span class="search-highlight">${match}</span>`
-            );
+            highlightText(card.querySelector('.product-title'), '{{ query }}');
+            highlightText(card.querySelector('.sku'), '{{ query }}');
+            highlightText(card.querySelector('.product-description'), '{{ query }}');
         });
     </script>
 {% endblock %}

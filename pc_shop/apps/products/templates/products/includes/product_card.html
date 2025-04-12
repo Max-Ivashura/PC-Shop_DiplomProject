@@ -3,7 +3,8 @@
     <!-- Изображение -->
     <a href="{{ product.get_absolute_url }}" class="product-image">
         {% with main_image=product.main_image %}
-            <img src="{% if main_image %}{{ main_image.image.url }}{% else %}{% static 'images/no-image.webp' %}{% endif %}"
+            <img src="
+                    {% if main_image %}{{ main_image.image.url }}{% else %}{% static 'images/no-image.webp' %}{% endif %}"
                  class="card-img-top lazy"
                  alt="{{ product.name }}"
                  loading="lazy"
@@ -15,7 +16,12 @@
     <div class="card-body d-flex flex-column">
         <div class="flex-grow-1">
             <h5 class="card-title" itemprop="name">{{ product.name }}</h5>
-            <p class="card-text text-muted">{{ product.category }}</p>
+            <div class="product-meta mb-2">
+                <small class="text-muted d-block" itemprop="sku">Артикул: {{ product.sku }}</small>
+                {% if product.is_digital %}
+                    <span class="badge bg-info mt-1">Цифровой товар</span>
+                {% endif %}
+            </div>
             <div itemprop="offers" itemscope itemtype="http://schema.org/Offer">
                 <span itemprop="price" content="{{ product.price }}">{{ product.price }}</span>
                 <span itemprop="priceCurrency" content="RUB">₽</span>
