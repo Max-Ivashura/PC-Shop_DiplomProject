@@ -1,5 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from mptt.models import MPTTModel, TreeForeignKey
 from django.utils.translation import gettext_lazy as _
 from django.db.models import JSONField
@@ -18,7 +20,7 @@ class Category(MPTTModel):
         related_name='children',
         verbose_name=_("Родительская категория")
     )
-    path = models.CharField(_("Путь категории"), max_length=255, editable=False, blank=True)
+    path = models.CharField(_("Путь категории"), max_length=255, editable=False, blank=True, db_index=True)
 
     class Meta:
         verbose_name = _("Категория")
@@ -31,19 +33,38 @@ class Category(MPTTModel):
         return self.name
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Теперь можно вызывать MPTT-методы
+        if not self.pk:
+            super().save(*args, **kwargs)
+
         ancestors = self.get_ancestors(include_self=True)
         self.path = ' > '.join(ancestor.name for ancestor in ancestors)
         super().save(*args, **kwargs)
 
     def get_all_attributes(self):
         return Attribute.objects.filter(
-            Q(groups__category=self) | Q(groups__category__in=self.get_descendants())
-        ).select_related('parent').prefetch_related(
-            'groups__category',
+            Q(groups__group__category=self) | Q(groups__group__category__in=self.get_descendants())
+        ).prefetch_related(
+            'groups__group__category',
             'enum_options'
         ).distinct()
+
+
+@receiver([post_save, post_delete], sender=Category)
+def update_descendants_path(sender, instance, **kwargs):
+    if kwargs.get('update_fields') and 'path' in kwargs['update_fields']:
+        return
+    for descendant in instance.get_descendants():
+        descendant.save(update_fields=['path'])
+
+
+class AttributeGroupLink(models.Model):
+    attribute = models.ForeignKey('Attribute', on_delete=models.CASCADE)
+    group = models.ForeignKey('AttributeGroup', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('attribute', 'group')
+        verbose_name = _("Связь атрибута с группой")
+        verbose_name_plural = _("Связи атрибутов с группами")
 
 
 class AttributeGroup(MPTTModel):
@@ -74,6 +95,14 @@ class AttributeGroup(MPTTModel):
         return f"{self.category.name} > {self.name}"
 
 
+class AttributeManager(models.Manager):
+    def required_attributes(self):
+        return self.filter(is_required=True)
+
+    def compatibility_critical(self):
+        return self.filter(compatibility_critical=True)
+
+
 class Attribute(MPTTModel):
     DATA_TYPES = [
         ('string', _('Строка')),
@@ -82,10 +111,13 @@ class Attribute(MPTTModel):
         ('enum', _('Список')),
     ]
 
+    objects = AttributeManager()
+
     name = models.CharField(_("Название атрибута"), max_length=255)
     data_type = models.CharField(_("Тип данных"), max_length=10, choices=DATA_TYPES)
     groups = models.ManyToManyField(
         AttributeGroup,
+        through='AttributeGroupLink',
         related_name='attributes',
         verbose_name=_("Группы атрибутов")
     )
@@ -108,15 +140,14 @@ class Attribute(MPTTModel):
         null=True,
         blank=True,
         related_name='children',
-        verbose_name=_("Родительский атрибут")  # Исправлено
+        verbose_name=_("Родительский атрибут")
     )
-
 
     class Meta:
         verbose_name = _("Атрибут")
         verbose_name_plural = _("Атрибуты")
         indexes = [
-            models.Index(fields=['data_type', 'is_required']),  # Составной индекс
+            models.Index(fields=['data_type', 'is_required']),
             models.Index(fields=['name']),
         ]
 
@@ -124,11 +155,19 @@ class Attribute(MPTTModel):
         order_insertion_by = ['name']
 
     def clean(self):
-        if self.validation_regex:
-            try:
-                re.compile(self.validation_regex)
-            except re.error:
-                raise ValidationError(_("Невалидное регулярное выражение"))
+        super().clean()
+        if self.pk:
+            for group in self.groups.all():
+                if Attribute.objects.filter(
+                        name=self.name,
+                        groups=group
+                ).exclude(pk=self.pk).exists():
+                    raise ValidationError(
+                        _("Атрибут с именем '%(name)s' уже существует в группе '%(group)s'") % {
+                            'name': self.name,
+                            'group': group
+                        }
+                    )
 
     def __str__(self):
         return f"{self.name} ({self.get_data_type_display()})"
@@ -189,6 +228,9 @@ class ProductAttributeValue(models.Model):
             if not isinstance(val, (int, float)):
                 raise ValidationError(_("Требуется числовое значение"))
         elif attr.data_type == 'boolean':
+            if isinstance(val, str):
+                val = val.lower() in ('true', '1')
+                self.value = val
             if not isinstance(val, bool):
                 raise ValidationError(_("Требуется логическое значение"))
         elif attr.data_type == 'enum':
