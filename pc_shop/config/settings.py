@@ -49,6 +49,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Custom
+    'apps.cart.middleware.CartActivityMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -125,9 +127,26 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Вывод в консоль
 DEFAULT_FROM_EMAIL = 'noreply@pcshop.ru'
 
+# Настройки корзины
+CART_SESSION_TIMEOUT = 3600 * 2  # 2 часа
+
+# Celery
+CELERY_BROKER_URL = 'redis://localhost:6380/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6380/0'
+CELERY_TIMEZONE = 'Europe/Moscow'
+
+
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+        'LOCATION': 'redis://localhost:6380/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
     }
+}
+
+JAZZMIN_SETTINGS = {
+    "related_modal_active": True,
+    "show_ui_builder": True,
 }

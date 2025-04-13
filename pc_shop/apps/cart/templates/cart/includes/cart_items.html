@@ -1,0 +1,6 @@
+<a href="{% url 'cart_detail' %}" class="nav-link">
+    <i class="fas fa-shopping-cart"></i>
+    <span id="cart-counter" class="badge bg-primary">
+        {{ cart.items.count }}
+    </span>
+</a>

@@ -1,72 +1,99 @@
-document.addEventListener('DOMContentLoaded', function () {
-    // Обновление количества товара
-    document.querySelectorAll('.update-quantity').forEach(button => {
-        button.addEventListener('click', function () {
-            const productId = this.dataset.productId;
-            const quantity = this.closest('tr').querySelector('.quantity-input').value;
+// cart.js - Логика работы с корзиной
+document.addEventListener('DOMContentLoaded', () => {
+    const cartContainer = document.querySelector('.cart-container');
 
-            fetch(`/cart/update/${productId}/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({ quantity: quantity })
-            })
-            .then(response => response.json())
-            .then(data => {
+    // Обновление количества
+    cartContainer.addEventListener('click', async (e) => {
+        if (e.target.closest('.update-btn')) {
+            const row = e.target.closest('tr');
+            const productId = row.dataset.productId;
+            const input = row.querySelector('.quantity-input');
+            const newQuantity = parseInt(input.value);
+
+            if (isNaN(newQuantity)) {
+                Utils.showNotification('Некорректное количество', 'danger');
+                input.value = input.dataset.oldValue;
+                return;
+            }
+
+            try {
+                const response = await fetch(`/cart/update/${productId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': Utils.getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({quantity: newQuantity})
+                });
+
+                const data = await response.json();
+
                 if (data.success) {
-                    document.getElementById('cart-items').innerHTML = data.cart_html;
-                    document.getElementById('total-price').innerText = `${data.total_price} руб.`;
+                    updateCartUI(data);
+                    Utils.showNotification('Корзина обновлена');
+                    Utils.animateIcon('.navbar .fa-shopping-cart', 'pulse');
                 } else {
-                    alert(data.message);
+                    input.value = data.old_quantity;
+                    Utils.showNotification(data.error, 'danger');
                 }
-            });
-        });
+            } catch (error) {
+                Utils.showNotification('Ошибка соединения', 'danger');
+            }
+        }
     });
 
     // Удаление товара
-    document.querySelectorAll('.remove-item').forEach(button => {
-        button.addEventListener('click', function () {
-            const productId = this.dataset.productId;
-            const modal = new bootstrap.Modal(document.getElementById('confirmRemoveModal'));
-            const confirmButton = document.getElementById('confirm-remove');
+    cartContainer.addEventListener('click', async (e) => {
+        if (e.target.closest('.remove-btn')) {
+            const productId = e.target.dataset.productId;
+            const productName = e.target.dataset.productName;
 
-            confirmButton.onclick = function () {
-                fetch(`/cart/remove/${productId}/`, {
+            if (!confirm(`Удалить "${productName}" из корзины?`)) return;
+
+            try {
+                const response = await fetch(`/cart/remove/${productId}/`, {
                     method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload(); // Перезагружаем страницу после удаления
-                    } else {
-                        alert(data.message);
-                    }
+                    headers: {'X-CSRFToken': Utils.getCookie('csrftoken')}
                 });
-                modal.hide();
-            };
 
-            modal.show();
-        });
-    });
-});
+                const data = await response.json();
 
-// Функция для получения CSRF-токена
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+                if (data.success) {
+                    updateCartUI(data);
+                    Utils.showNotification('Товар удалён');
+                    Utils.animateIcon('.navbar .fa-shopping-cart', 'shake');
+                } else {
+                    Utils.showNotification(data.error, 'danger');
+                }
+            } catch (error) {
+                Utils.showNotification('Ошибка соединения', 'danger');
             }
         }
+    });
+
+    // Обновление интерфейса
+    function updateCartUI(data) {
+        // Обновление списка товаров
+        if (data.cart_html) {
+            document.getElementById('cart-items').innerHTML = data.cart_html;
+        }
+
+        // Обновление общей суммы
+        if (data.cart_total) {
+            document.getElementById('total-price').textContent =
+                `${data.cart_total} ₽`;
+        }
+
+        // Обновление счетчика
+        const counter = document.getElementById('cart-counter');
+        if (counter && data.total_items !== undefined) {
+            counter.textContent = data.total_items;
+        }
+
+        // Блокировка кнопки оформления
+        const checkoutBtn = document.querySelector('.checkout-btn');
+        if (checkoutBtn) {
+            checkoutBtn.classList.toggle('disabled', !data.is_active);
+        }
     }
-    return cookieValue;
-}
+});

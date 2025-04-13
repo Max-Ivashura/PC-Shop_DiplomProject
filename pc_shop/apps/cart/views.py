@@ -1,174 +1,199 @@
 from django.shortcuts import redirect, get_object_or_404, render
-from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.db.models import F
-from apps.products.models import Product
-from apps.cart.utils import CartHandler
-from apps.orders.models import Order, OrderItem
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.db import transaction
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.utils import timezone
 import json
+
+from apps.products.models import Product
+from apps.cart.models import Cart, CartItem
+from apps.orders.models import Order, OrderItem
+from apps.cart.utils import CartHandler
 
 
 @require_POST
 def cart_add(request, product_id):
-    """
-    Добавление товара в корзину.
-    """
-    cart = CartHandler(request)
-    product = get_object_or_404(Product, id=product_id)
-
-    # Проверка доступности товара
-    if not product.is_available or product.quantity <= 0:
-        return JsonResponse({'success': False, 'message': 'Товар недоступен или закончился'}, status=400)
-
-    # Получение количества из запроса
+    """Добавление товара с резервированием и конкурентным контролем"""
     try:
-        quantity = int(request.POST.get('quantity', 1))
-        if quantity < 1:
-            raise ValueError("Количество не может быть меньше 1")
-    except ValueError:
-        return JsonResponse({'success': False, 'message': 'Некорректное количество'}, status=400)
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(pk=product_id)
+            cart = CartHandler(request).cart
 
-    # Добавление товара в корзину
-    cart.add(product=product, quantity=quantity)
+            if not cart.is_active:
+                return JsonResponse({
+                    'error': 'Корзина завершена. Создайте новую корзину'
+                }, status=400)
 
-    # Ответ для AJAX-запросов
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': True,
-            'total_items': cart.get_cart_items().count(),
-            'message': f'{product.name} добавлен в корзину'
-        })
+            quantity = int(request.POST.get('quantity', 1))
 
-    return redirect('cart_detail')
+            try:
+                cart.add_product(product, quantity)
+            except ValidationError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+
+            return JsonResponse({
+                'success': True,
+                'total_items': cart.total_items,
+                'reserved': product.quantity,
+                'cart_total': cart.get_total_price()
+            })
+
+    except (Product.DoesNotExist, ValueError) as e:
+        return JsonResponse({'error': str(e)}, status=400)
 
 
 @require_POST
 def cart_update(request, product_id):
-    """
-    Обновление количества товара в корзине.
-    """
-    cart = CartHandler(request)
-    product = get_object_or_404(Product, id=product_id)
-
-    # Парсинг данных из JSON
+    """Атомарное обновление количества с проверкой резерва"""
     try:
-        data = json.loads(request.body)
-        new_quantity = int(data.get('quantity', 1))
-        if new_quantity < 1:
-            raise ValueError("Количество не может быть меньше 1")
-    except (json.JSONDecodeError, ValueError):
-        return JsonResponse({'success': False, 'message': 'Некорректные данные'}, status=400)
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(pk=product_id)
+            cart = CartHandler(request).cart
+            data = json.loads(request.body)
+            new_quantity = int(data['quantity'])
 
-    # Поиск товара в корзине
-    cart_item = cart.cart.items.filter(product=product).first()
-    if not cart_item:
-        return JsonResponse({'success': False, 'message': 'Товар не найден в корзине'}, status=404)
+            if not cart.is_active:
+                raise PermissionDenied("Корзина завершена")
 
-    # Проверка доступного количества товара
-    if new_quantity > product.quantity:
-        return JsonResponse({'success': False, 'message': 'Недостаточно товара на складе'}, status=400)
+            item = cart.items.get(product=product)
+            delta = new_quantity - item.quantity
 
-    # Обновление количества
-    old_quantity = cart_item.quantity
-    cart_item.quantity = new_quantity
-    cart_item.save()
+            if product.quantity < delta:
+                return JsonResponse({
+                    'error': f'Доступно только {product.quantity} шт.'
+                }, status=400)
 
-    # Рендеринг HTML для корзины
-    try:
-        cart_items_html = render_to_string(
-            'includes/cart_items.html',
-            {'cart': cart},
-            request=request
-        )
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': f'Ошибка рендеринга: {str(e)}'}, status=500)
+            item.quantity = new_quantity
+            item.save()
+            product.quantity -= delta
+            product.save()
 
-    return JsonResponse({
-        'success': True,
-        'cart_count': cart.cart.items.count(),
-        'cart_html': cart_items_html,
-        'total_price': cart.get_total_price(),
-        'old_quantity': old_quantity
-    })
+            return JsonResponse({
+                'success': True,
+                'new_quantity': item.quantity,
+                'item_total': item.get_cost(),
+                'cart_total': cart.get_total_price(),
+                'product_reserved': product.quantity
+            })
+
+    except (CartItem.DoesNotExist, KeyError) as e:
+        return JsonResponse({'error': str(e)}, status=404)
 
 
 @require_POST
 def cart_remove(request, product_id):
-    """
-    Удаление товара из корзины.
-    """
-    cart = CartHandler(request)
-    product = get_object_or_404(Product, id=product_id)
-    cart.remove(product)
+    """Удаление с возвратом резерва"""
+    try:
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(pk=product_id)
+            cart = CartHandler(request).cart
 
-    # Ответ для AJAX-запросов
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': True,
-            'total_items': cart.get_cart_items().count(),
-            'message': f'{product.name} удален из корзины'
-        })
+            if not cart.is_active:
+                raise PermissionDenied("Корзина завершена")
 
-    return redirect('cart_detail')
+            item = cart.items.get(product=product)
+            product.quantity += item.quantity
+            product.save()
+            item.delete()
 
+            return JsonResponse({
+                'success': True,
+                'cart_total': cart.get_total_price(),
+                'total_items': cart.total_items,
+                'product_restored': product.quantity
+            })
 
-def cart_detail(request):
-    """
-    Страница с деталями корзины.
-    """
-    cart = CartHandler(request)
-    return render(request, 'cart/detail.html', {'cart': cart})
+    except CartItem.DoesNotExist:
+        return JsonResponse({'error': 'Товар не найден'}, status=404)
 
 
 @login_required
 def checkout(request):
-    """
-    Оформление заказа.
-    """
-    cart = CartHandler(request)
+    """Оформление заказа с блокировкой корзины"""
+    cart = CartHandler(request).cart
+
+    if not cart.is_active or cart.total_items == 0:
+        return redirect('cart_detail')
+
     if request.method == 'POST':
-        # Создание заказа
-        order = Order.objects.create(
-            user=request.user,
-            first_name=request.POST['first_name'],
-            last_name=request.POST['last_name'],
-            email=request.POST['email'],
-            address=request.POST['address']
-        )
+        try:
+            with transaction.atomic():
+                # Создание заказа
+                order = Order.objects.create(
+                    user=request.user,
+                    first_name=request.POST['first_name'],
+                    last_name=request.POST['last_name'],
+                    email=request.POST['email'],
+                    address=request.POST['address'],
+                    total=cart.get_total_price()
+                )
 
-        # Перенос товаров из корзины в заказ
-        for item in cart.get_cart_items():
-            OrderItem.objects.create(
-                order=order,
-                product=item.product,
-                price=item.product.price,
-                quantity=item.quantity
-            )
+                # Перенос товаров
+                items = cart.items.select_related('product')
+                OrderItem.objects.bulk_create([
+                    OrderItem(
+                        order=order,
+                        product=item.product,
+                        price=item.product.price,
+                        quantity=item.quantity,
+                        name_snapshot=item.product.name
+                    ) for item in items
+                ])
 
-        # Очистка корзины
-        cart.clear()
+                # Блокировка корзины
+                cart.converted_order = order
+                cart.save()
 
-        return redirect('order_success', order_id=order.id)
+                # Отправка уведомлений и очистка
+                # ... (ваш код отправки email/SMS)
 
-    return render(request, 'cart/checkout.html', {'cart': cart})
+                return redirect('order_success', order_id=order.id)
+
+        except KeyError as e:
+            return HttpResponseBadRequest(f"Не заполнено поле: {str(e)}")
+
+    return render(request, 'cart/checkout.html', {
+        'cart': cart,
+        'active_cart': cart.is_active
+    })
+
+
+def cart_detail(request):
+    """Детализация корзины с блокировкой"""
+    cart = CartHandler(request).cart
+    return render(request, 'cart/detail.html', {
+        'cart': cart,
+        'readonly': not cart.is_active
+    })
 
 
 def order_success(request, order_id):
-    """
-    Страница успешного оформления заказа.
-    """
-    order = get_object_or_404(Order, id=order_id)
-    return render(request, 'cart/success.html', {'order': order})
+    """Страница успешного заказа с защитой доступа"""
+    order = get_object_or_404(Order, pk=order_id, user=request.user)
+    return render(request, 'cart/success.html', {
+        'order': order,
+        'cart': order.source_cart
+    })
 
 
 @login_required
 def cart_validate(request):
-    cart = CartHandler(request)
-    all_available = True
-    for item in cart.get_cart_items():
-        if not item.product.is_available or item.quantity > item.product.quantity:
-            all_available = False
-            break
-    return JsonResponse({'all_available': all_available})
+    """Проверка доступности всех товаров"""
+    cart = CartHandler(request).cart
+    problems = []
+
+    for item in cart.items.select_related('product'):
+        if item.quantity > item.product.quantity:
+            problems.append({
+                'product': item.product.name,
+                'available': item.product.quantity,
+                'requested': item.quantity
+            })
+
+    return JsonResponse({
+        'valid': len(problems) == 0,
+        'problems': problems,
+        'cart_id': cart.id
+    })

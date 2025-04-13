@@ -4,21 +4,25 @@
 {% block css %}
     <link rel="stylesheet" href="{% static 'cart/css/detail.css' %}">
 {% endblock %}
+
 {% block content %}
-    <!-- Уникальный контейнер для изоляции стилей -->
+    <!-- Блок для ошибок -->
+    <div id="cart-errors" class="alert alert-danger d-none position-fixed top-0 end-0 m-3" style="z-index: 1000;"></div>
+
     <div class="cart-container">
         <div class="container my-5">
             <h1 class="mb-4">Корзина</h1>
-            {% if cart.get_cart_items %}
+
+            {% if cart.items.all %}
                 <!-- Таблица товаров -->
                 <div class="table-responsive cart-table">
                     <table class="table table-bordered">
-                        <thead>
+                        <thead class="table-light">
                         <tr>
                             <th>Товар</th>
                             <th>Количество</th>
-                            <th>Цена за единицу</th>
-                            <th>Общая стоимость</th>
+                            <th>Цена</th>
+                            <th>Сумма</th>
                             <th></th>
                         </tr>
                         </thead>
@@ -27,46 +31,38 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- Общая стоимость -->
+
+                <!-- Итоги -->
                 <div class="d-flex justify-content-between align-items-center mt-4">
-                    <p class="lead mb-0">Общая стоимость: <strong id="total-price">{{ cart.get_total_price }}
-                        руб.</strong></p>
-                    <a href="{% url 'checkout' %}" class="btn btn-primary checkout-btn">
-                        <i class="fas fa-shopping-bag me-2"></i>Оформить заказ
+                    <div class="total-block">
+                        <p class="lead mb-0">
+                            Товаров: <span id="cart-counter">{{ cart.items.count }}</span>
+                        </p>
+                        <p class="lead mb-0">
+                            Итого: <strong id="total-price">{{ cart.get_total_price }} ₽</strong>
+                        </p>
+                    </div>
+
+                    <a
+                            href="{% url 'checkout' %}"
+                            class="btn btn-primary checkout-btn {% if not cart.is_active %}disabled{% endif %}"
+                    >
+                        <i class="fas fa-shopping-bag me-2"></i>Оформить
                     </a>
                 </div>
             {% else %}
                 <!-- Пустая корзина -->
                 <div class="empty-cart text-center py-5">
-                    <p class="lead">Ваша корзина пуста.</p>
+                    <p class="lead">Ваша корзина пуста</p>
                     <a href="{% url 'product_list' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-store me-2"></i>Перейти в каталог
+                        <i class="fas fa-store me-2"></i>В каталог
                     </a>
                 </div>
             {% endif %}
         </div>
     </div>
-
-    <!-- Модальное окно для подтверждения удаления -->
-    <div class="modal fade" id="confirmRemoveModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Подтвердите удаление</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Вы уверены, что хотите удалить этот товар из корзины?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-danger" id="confirm-remove">Удалить</button>
-                </div>
-            </div>
-        </div>
-    </div>
 {% endblock %}
-<!-- JavaScript для обновления корзины -->
+
 {% block scripts %}
     <script src="{% static 'cart/js/cart.js' %}"></script>
 {% endblock %}
