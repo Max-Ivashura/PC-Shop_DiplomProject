@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from import_export.admin import ExportActionMixin
-from .models import Order, OrderItem
+from apps.orders.models import Order, OrderItem
+from rangefilter.filters import NumericRangeFilter
 
 
 class OrderItemInline(admin.TabularInline):
@@ -34,13 +35,13 @@ class OrderAdmin(ExportActionMixin, admin.ModelAdmin):
         'created_at',
         'total_price',
         'payment_status',
-        'actions'
+        'order_actions'
     )
     list_filter = (
         'status',
         'paid',
         ('created_at', admin.DateFieldListFilter),
-        ('total_price', admin.RangeFilter),
+        ('total_price', NumericRangeFilter),
     )
     search_fields = (
         'id',
@@ -108,7 +109,7 @@ class OrderAdmin(ExportActionMixin, admin.ModelAdmin):
 
     payment_status.short_description = 'Оплата'
 
-    def actions(self, obj):
+    def order_actions(self, obj):
         links = []
         if obj.status == 'processing':
             links.append(
@@ -120,7 +121,7 @@ class OrderAdmin(ExportActionMixin, admin.ModelAdmin):
             )
         return format_html(' | '.join(links))
 
-    actions.short_description = 'Действия'
+    order_actions.short_description = 'Действия'
 
     # Custom Actions
     def mark_as_shipped(self, request, queryset):

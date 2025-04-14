@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'jazzmin',
     'sorl.thumbnail',
     'import_export',
+    'rangefilter',
 ]
 
 MIDDLEWARE = [

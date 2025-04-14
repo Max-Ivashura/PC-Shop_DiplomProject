@@ -52,7 +52,7 @@ class Comparison(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=Q(user__isnull=False) | Q(session_key__isnull=False),
-                name='user_or_session_required'
+                name='compare_user_or_session_required'
             )
         ]
 

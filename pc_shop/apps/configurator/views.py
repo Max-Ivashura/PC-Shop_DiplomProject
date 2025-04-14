@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 from apps.catalog_config.models import Category
 from apps.products.models import Product
-from .models import Build, BuildComponent, ComponentType, CompatibilityRule
+from apps.configurator.models import Build, BuildComponent, ComponentType, CompatibilityRule
 
 
 @login_required
