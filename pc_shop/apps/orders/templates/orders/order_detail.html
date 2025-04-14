@@ -1,28 +1,147 @@
 {% extends 'orders/orders_base.html' %}
-
-{% block title %}Заказ #{{ order.id }} - {{ block.super }}{% endblock %}
+{% load static humanize %}
 
 {% block content %}
-    <h1>Заказ #{{ order.id }}</h1>
+    <article class="order-detail" itemscope itemtype="http://schema.org/Order">
+        <header class="order-header">
+            <h1 class="order-title" itemprop="name">
+                Заказ №<span itemprop="orderNumber">{{ order.id }}</span>
+            </h1>
 
-    <div class="order-info">
-        <p>Статус: <span class="status {{ order.status }}">{{ order.get_status_display }}</span></p>
-        <p>Дата: {{ order.created_at }}</p>
-        <p>Адрес: {{ order.address }}</p>
-    </div>
+            <div class="order-meta">
+                <div class="order-status">
+                <span class="status-badge status-{{ order.status }}"
+                      aria-label="Текущий статус заказа">
+                    {{ order.get_status_display }}
+                </span>
+                    <meta itemprop="orderStatus" content="{{ order.status }}">
+                </div>
 
-    <h2>Товары</h2>
-    <ul class="order-items">
-        {% for item in order.items.all %}
-            <li>
-                <span>{{ item.quantity }} × </span>
-                <span>{{ item.product_name }}</span>
-                <span class="price">{{ item.get_cost }} ₽</span>
-            </li>
-        {% endfor %}
-    </ul>
+                <div class="order-dates">
+                    <p>
+                        <span class="meta-label">Создан:</span>
+                        <time datetime="{{ order.created_at|date:'c' }}"
+                              itemprop="orderDate">
+                            {{ order.created_at|date:"d E Y, H:i" }}
+                        </time>
+                    </p>
+                    {% if order.updated_at != order.created_at %}
+                        <p>
+                            <span class="meta-label">Обновлен:</span>
+                            <time datetime="{{ order.updated_at|date:'c' }}">
+                                {{ order.updated_at|date:"d E Y, H:i" }}
+                            </time>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
 
-    <div class="total-cost">
-        Итого: <strong>{{ order.get_total_cost }} ₽</strong>
-    </div>
+        <section class="order-info-grid">
+            <div class="order-contacts" itemprop="customer" itemscope itemtype="http://schema.org/Person">
+                <h2 class="section-title">Контактная информация</h2>
+                <dl class="contact-details">
+                    <div class="detail-item">
+                        <dt>Имя:</dt>
+                        <dd itemprop="name">{{ order.first_name }} {{ order.last_name }}</dd>
+                    </div>
+                    <div class="detail-item">
+                        <dt>Email:</dt>
+                        <dd itemprop="email"><a href="mailto:{{ order.email }}">{{ order.email }}</a></dd>
+                    </div>
+                    {% if order.phone %}
+                        <div class="detail-item">
+                            <dt>Телефон:</dt>
+                            <dd itemprop="telephone">{{ order.phone }}</dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            </div>
+
+            <div class="order-shipping" itemprop="deliveryAddress" itemscope itemtype="http://schema.org/PostalAddress">
+                <h2 class="section-title">Адрес доставки</h2>
+                <div class="address-details" itemprop="streetAddress">
+                    {{ order.address }}
+                </div>
+            </div>
+        </section>
+
+        <section class="order-items" itemprop="orderedItem" itemscope itemtype="http://schema.org/ItemList">
+            <h2 class="section-title">Состав заказа</h2>
+            <div class="responsive-table">
+                <table class="order-products">
+                    <caption class="visually-hidden">Список товаров в заказе</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col" id="col-product">Товар</th>
+                        <th scope="col" id="col-price">Цена</th>
+                        <th scope="col" id="col-qty">Кол-во</th>
+                        <th scope="col" id="col-subtotal">Сумма</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in order.items.all %}
+                        <tr itemprop="itemListElement" itemscope itemtype="http://schema.org/OrderItem">
+                            <td data-label="Товар" headers="col-product"
+                                itemprop="name" content="{{ item.product_name }}">
+                                {% if item.product %}
+                                    <a href="{{ item.product.get_absolute_url }}"
+                                       class="product-link"
+                                       title="{{ item.product_name }}">
+                                        {{ item.product_name }}
+                                    </a>
+                                {% else %}
+                                    {{ item.product_name }}
+                                {% endif %}
+                            </td>
+
+                            <td data-label="Цена" headers="col-price"
+                                itemprop="price"
+                                content="{{ item.price }}">
+                                {{ item.price|intcomma }} ₽
+                            </td>
+
+                            <td data-label="Кол-во" headers="col-qty"
+                                itemprop="orderQuantity"
+                                content="{{ item.quantity }}">
+                                ×{{ item.quantity }}
+                            </td>
+
+                            <td data-label="Сумма" headers="col-subtotal"
+                                itemprop="totalPrice"
+                                content="{{ item.get_cost }}">
+                                {{ item.get_cost|intcomma }} ₽
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer class="order-footer">
+            <div class="order-total" itemprop="paymentDue" content="{{ order.total_price }}">
+                <span class="total-label">Итого к оплате:</span>
+                <span class="total-amount">{{ order.total_price|intcomma }} ₽</span>
+            </div>
+
+            <div class="order-actions">
+                <a href="{% url 'order_list' %}" class="btn-secondary">
+                    ← К списку заказов
+                </a>
+                <div class="action-group">
+                    <button class="btn-icon" title="Скачать PDF">
+                        <img src="{% static 'orders/img/pdf-icon.svg' %}"
+                             alt="Иконка PDF"
+                             width="20">
+                    </button>
+                    <a href="{% url 'reorder' order.id %}"
+                       class="btn-primary"
+                       title="Повторить этот заказ">
+                        Повторить заказ
+                    </a>
+                </div>
+            </div>
+        </footer>
+    </article>
 {% endblock %}

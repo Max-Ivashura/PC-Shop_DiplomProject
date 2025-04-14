@@ -3,138 +3,157 @@
 {% load custom_filters %}
 
 {% block css %}
-<link rel="stylesheet" href="{% static 'compare/css/compare.css' %}">
-<style>
-  .compare-table {
-    min-width: 800px;
-    border-collapse: collapse;
-    margin: 2rem 0;
-  }
-  .compare-table th, .compare-table td {
-    border: 1px solid #ddd;
-    padding: 12px;
-    text-align: left;
-  }
-  .product-header {
-    position: relative;
-  }
-  .remove-btn {
-    position: absolute;
-    top: 0;
-    right: 0;
-    background: #ff4444;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 0 0 0 5px;
-  }
-  .attr-name {
-    font-weight: bold;
-    background: #f8f9fa;
-  }
-  .group-row td {
-    background: #e9ecef;
-    font-weight: bold;
-  }
-  .product-image {
-    max-width: 150px;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-  }
-  .max-reached {
-    background: #ffeeba;
-    padding: 1rem;
-    border-radius: 5px;
-    margin-bottom: 1rem;
-  }
-</style>
+    <link rel="stylesheet" href="{% static 'compare/css/compare.css' %}">
 {% endblock %}
 
 {% block title %}Сравнение товаров{% endblock %}
 
 {% block content %}
-<div class="compare-container">
-  <h1 class="compare-heading">Сравнение товаров</h1>
+    <div class="compare-container">
+        <h1 class="compare-heading">Сравнение товаров</h1>
 
-  {% if comparison.products.exists %}
-    <!-- Блок уведомления о лимите -->
-    {% if comparison.products.count >= comparison.MAX_PRODUCTS %}
-      <div class="max-reached">
-        Достигнут максимальный лимит в {{ comparison.MAX_PRODUCTS }} товара(ов)
-      </div>
-    {% endif %}
-
-    <div class="table-responsive">
-      <table class="compare-table">
-        <thead>
-          <tr>
-            <th class="compare-header">Характеристика</th>
-            {% for product in comparison.products.all %}
-              <th class="product-header">
-                <div class="product-info">
-                  {% if product.main_image %}
-                    <img src="{{ product.main_image.get_thumbnail_url }}" class="product-image">
-                  {% endif %}
-                  <span>{{ product.name }}</span>
-                  <button
-                    class="remove-btn"
-                    onclick="removeProduct({{ product.id }})"
-                  >×</button>
+        {% if comparison.products.exists %}
+            <div class="compare-controls">
+                <!-- Интерактивные элементы управления -->
+                <div class="controls-group">
+                    <button class="btn btn-toggle" data-target=".group-row">Свернуть все группы</button>
+                    <button class="btn btn-highlight" data-type="diff">Показать различия</button>
+                    <div class="dropdown">
+                        <button class="btn btn-filter">Фильтр атрибутов</button>
+                        <div class="dropdown-content">
+                            <label><input type="checkbox" class="filter-checkbox" data-type="critical">
+                                Критические</label>
+                            <label><input type="checkbox" class="filter-checkbox" data-type="numeric"> Числовые</label>
+                        </div>
+                    </div>
                 </div>
-              </th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for (group, attr_name), values in attributes_matrix.items %}
-            <tr class="group-row">
-              <td colspan="{{ comparison.products.count|add:1 }}">{{ group }}</td>
-            </tr>
-            <tr class="attr-row">
-              <td class="attr-name">{{ attr_name }}</td>
-              {% for product in comparison.products.all %}
-                <td class="attr-value">{{ values|get_item:product.id|default:"—" }}</td>
-              {% endfor %}
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="{{ comparison.products.count|add:1 }}">Нет характеристик для сравнения</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+                <!-- Блок уведомлений -->
+                <div class="notification-badge">
+                    {{ comparison.products.count }}/{{ comparison.MAX_PRODUCTS }} товаров
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="compare-table">
+                    <!-- Заголовок таблицы -->
+                    <thead>
+                    <tr>
+                        <th class="compare-header">
+                            <span>Характеристики</span>
+                            <div class="sort-arrows">
+                                <span class="sort-up">↑</span>
+                                <span class="sort-down">↓</span>
+                            </div>
+                        </th>
+                        {% for product in comparison.products.all %}
+                            <th class="product-header">
+                                <div class="product-card">
+                                    <div class="image-wrapper">
+                                        {% if product.main_image %}
+                                            <img src="{{ product.main_image.get_thumbnail_url }}"
+                                                 class="product-image"
+                                                 alt="{{ product.name }}"
+                                                 loading="lazy">
+                                        {% endif %}
+                                        <button class="remove-btn"
+                                                data-product-id="{{ product.id }}"
+                                                aria-label="Удалить из сравнения">
+                                            <svg class="icon-close">
+                                                <use xlink:href="#icon-close"></use>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="product-meta">
+                                        <a href="{{ product.get_absolute_url }}" class="product-title">
+                                            {{ product.name }}
+                                        </a>
+                                        <div class="product-price">
+                                            {{ product.price|floatformat:"0" }} ₽
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+
+                    <!-- Тело таблицы -->
+                    <tbody>
+                    {% for group_info, attributes in attributes_matrix.items %}
+                        <tr class="group-row" data-group="{{ group_info.0 }}">
+                            <td colspan="{{ comparison.products.count|add:1 }}">
+                                <div class="group-header">
+                                    <span class="group-name">{{ group_info.0 }}</span>
+                                    <svg class="icon-collapse">
+                                        <use xlink:href="#icon-chevron-down"></use>
+                                    </svg>
+                                </div>
+                            </td>
+                        </tr>
+
+                        {% for attr in attributes %}
+                            <tr class="attr-row"
+                                data-attribute-type="{{ attr.data_type }}"
+                                data-is-critical="{{ attr.compatibility_critical }}">
+                                <td class="attr-name">
+                                    {{ attr.name }}
+                                    {% if attr.compatibility_critical %}
+                                        <span class="critical-badge" title="Критичный параметр">!</span>
+                                    {% endif %}
+                                </td>
+                                {% for product in comparison.products.all %}
+                                    <td class="attr-value"
+                                        data-product-id="{{ product.id }}">
+                                        {{ attr.values|get_item:product.id|default:"—" }}
+                                        {% if attr.unit %}<span class="unit">{{ attr.unit }}</span>{% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    {% empty %}
+                        <tr class="no-attributes">
+                            <td colspan="{{ comparison.products.count|add:1 }}">
+                                <div class="empty-state">
+                                    <img src="{% static 'compare/images/no-data.svg' %}"
+                                         alt="Нет данных"
+                                         class="empty-image">
+                                    <p>Нет характеристик для сравнения</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+            <div class="empty-compare">
+                <div class="empty-content">
+                    <img src="{% static 'compare/images/empty-compare.svg' %}"
+                         alt="Пустое сравнение"
+                         class="empty-illustration">
+                    <h2>Ваш список сравнения пуст</h2>
+                    <a href="{% url 'product_list' %}" class="btn btn-primary">
+                        <svg class="icon-catalog">
+                            <use xlink:href="#icon-catalog"></use>
+                        </svg>
+                        Перейти в каталог
+                    </a>
+                </div>
+            </div>
+        {% endif %}
     </div>
 
-    <!-- Скрипт для AJAX-удаления -->
-    <script>
-      function removeProduct(productId) {
-        if (confirm('Удалить товар из сравнения?')) {
-          fetch("{% url 'compare:remove' 0 %}".replace('0', productId), {
-            method: 'POST',
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest',
-              'X-CSRFToken': '{{ csrf_token }}'
-            }
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              window.location.reload();
-            } else {
-              alert(data.message);
-            }
-          });
-        }
-      }
-    </script>
+    <!-- SVG спрайт с иконками -->
+    <svg style="display:none">
+        <symbol id="icon-close" viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </symbol>
+        <!-- Другие иконки -->
+    </svg>
+{% endblock %}
 
-  {% else %}
-    <div class="empty-compare">
-      <p>Нет товаров для сравнения.</p>
-      <a href="{% url 'product_list' %}" class="btn btn-primary">Перейти в каталог</a>
-    </div>
-  {% endif %}
-</div>
+{% block scripts %}
+    <script src="{% static 'compare/js/compare.js' %}"></script>
 {% endblock %}

@@ -1,30 +1,91 @@
 {% extends 'orders/orders_base.html' %}
-
-{% block title %}Мои заказы - {{ block.super }}{% endblock %}
+{% load humanize %}
 
 {% block content %}
-    <h1>Мои заказы</h1>
+    <div class="order-history-header">
+        <h1 class="page-title">История заказов</h1>
+        <a href="{% url 'catalog' %}" class="continue-shopping">
+            ← Вернуться к покупкам
+        </a>
+    </div>
 
-    <table class="order-table">
-        <thead>
+    <div class="responsive-table">
+        <table class="order-history-table" itemscope itemtype="http://schema.org/ItemList">
+            <caption class="visually-hidden">Список ваших заказов</caption>
+            <thead>
             <tr>
-                <th>ID</th>
-                <th>Дата</th>
-                <th>Статус</th>
-                <th>Сумма</th>
+                <th scope="col" id="col-id">Номер</th>
+                <th scope="col" id="col-date">Дата</th>
+                <th scope="col" id="col-status">Статус</th>
+                <th scope="col" id="col-total">Сумма</th>
+                <th scope="col" id="col-actions"></th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+            <tbody>
             {% for order in orders %}
-                <tr>
-                    <td><a href="{% url 'order_detail' order.id %}">{{ order.id }}</a></td>
-                    <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
-                    <td class="status {{ order.status }}">{{ order.get_status_display }}</td>
-                    <td>{{ order.get_total_cost }} ₽</td>
+                <tr itemprop="itemListElement" itemscope itemtype="http://schema.org/Order">
+                    <td data-label="Номер" headers="col-id">
+                        <meta itemprop="orderNumber" content="{{ order.id }}">
+                        <a href="{% url 'order_detail' order.id %}"
+                           class="order-link"
+                           title="Детали заказа №{{ order.id }}">
+                            #{{ order.id }}
+                        </a>
+                    </td>
+
+                    <td data-label="Дата" headers="col-date">
+                        <time datetime="{{ order.created_at|date:'c' }}"
+                              itemprop="orderDate">
+                            {{ order.created_at|date:"d E Y, H:i" }}
+                        </time>
+                    </td>
+
+                    <td data-label="Статус" headers="col-status">
+                            <span class="status-badge status-{{ order.status }}"
+                                  aria-label="Статус заказа: {{ order.get_status_display }}">
+                                {{ order.get_status_display }}
+                            </span>
+                    </td>
+
+                    <td data-label="Сумма" headers="col-total"
+                        itemprop="totalPaymentDue"
+                        content="{{ order.total_price }}">
+                        {{ order.total_price|intcomma }} ₽
+                    </td>
+
+                    <td data-label="Действия" headers="col-actions">
+                        <div class="order-actions">
+                            <a href="{% url 'reorder' order.id %}"
+                               class="btn-reorder"
+                               title="Повторить этот заказ">
+                                ↻
+                            </a>
+                        </div>
+                    </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="4">У вас нет заказов</td></tr>
+                <tr>
+                    <td colspan="5" class="no-orders">
+                        <div class="empty-state">
+                            <img src="{% static 'orders/img/empty-cart.svg' %}"
+                                 alt=""
+                                 width="200"
+                                 loading="lazy">
+                            <p>Вы еще не сделали ни одного заказа</p>
+                            <a href="{% url 'catalog' %}" class="btn-primary">
+                                Начать покупки
+                            </a>
+                        </div>
+                    </td>
+                </tr>
             {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+
+    {% if is_paginated %}
+        <div class="pagination-wrapper">
+            {% include 'includes/pagination.html' %}
+        </div>
+    {% endif %}
 {% endblock %}

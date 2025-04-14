@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django_extensions',
     'mptt',
     'jazzmin',
-    'sorl.thumbnail'
+    'sorl.thumbnail',
+    'import_export',
 ]
 
 MIDDLEWARE = [

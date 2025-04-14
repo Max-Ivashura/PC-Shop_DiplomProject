@@ -1,11 +1,36 @@
+{% load static %}
+
 {% extends 'base.html' %}
+
+{% block meta %}
+    {{ block.super }}
+    <meta name="description" content="Управление заказами в интернет-магазине">
+{% endblock %}
+
+{% block body_class %}orders-page{% endblock %}
 
 {% block styles %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'orders/css/orders.css' %}">
+    <!-- Order-specific styles -->
+    <link rel="stylesheet"
+          href="{% static 'orders/css/orders.css' %}"
+          media="screen,projection">
+{% endblock %}
+
+{% block header %}
+    {% include 'orders/includes/header_nav.html' %}
+{% endblock %}
+
+{% block content_container %}
+    <main class="orders-container container">
+        {% block content %}{% endblock %}
+    </main>
 {% endblock %}
 
 {% block scripts %}
     {{ block.super }}
-    <script src="{% static 'orders/js/orders.js' %}"></script>
+    <!-- Order-related scripts -->
+    <script src="{% static 'orders/js/orders.js' %}"
+            defer
+            async></script>
 {% endblock %}

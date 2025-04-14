@@ -1,7 +1,10 @@
 from django.db import models
 from django.conf import settings
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
+from django.core.exceptions import ValidationError
+from django.urls import reverse
 from apps.products.models import Product
+
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -21,8 +24,9 @@ class Order(models.Model):
     )
     first_name = models.CharField("Имя", max_length=50)
     last_name = models.CharField("Фамилия", max_length=50)
-    email = models.EmailField("Email")
-    address = models.CharField("Адрес", max_length=250)
+    email = models.EmailField("Email", db_index=True)
+    phone = models.CharField("Телефон", max_length=20, blank=True)  # Добавлено
+    address = models.CharField("Адрес", max_length=250, db_index=True)
     created_at = models.DateTimeField("Создан", auto_now_add=True)
     updated_at = models.DateTimeField("Обновлен", auto_now=True)
     status = models.CharField(
@@ -30,9 +34,15 @@ class Order(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='processing',
-        db_index=True  # Для ускорения фильтрации по статусу
+        db_index=True
     )
     paid = models.BooleanField("Оплачен", default=False, db_index=True)
+    total_price = models.DecimalField(  # Добавлено
+        "Итоговая сумма",
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
 
     class Meta:
         ordering = ('-created_at',)
@@ -42,27 +52,49 @@ class Order(models.Model):
             models.Index(fields=['user', 'created_at']),
             models.Index(fields=['status', 'paid']),
         ]
+        constraints = [  # Добавлено
+            models.CheckConstraint(
+                check=Q(status__in=dict(STATUS_CHOICES).keys()),
+                name='valid_order_status'
+            )
+        ]
 
     def __str__(self):
         return f"Заказ {self.id} ({self.get_status_display()})"
 
-    def get_total_cost(self):
-        # Оптимизация через агрегацию
-        return self.items.aggregate(total=Sum(F('price') * F('quantity')))['total'] or 0
-
-    def update_status(self, new_status):
-        # Безопасное изменение статуса с проверкой
+    def clean(self):  # Добавлено
+        super().clean()
         allowed_transitions = {
             'processing': ['shipped', 'canceled'],
             'shipped': ['delivered', 'canceled'],
             'delivered': [],
             'canceled': [],
         }
-        if new_status in allowed_transitions.get(self.status, []):
-            self.status = new_status
-            self.save()
-            return True
-        return False
+
+        if self.pk:
+            old_status = Order.objects.get(pk=self.pk).status
+            if self.status not in allowed_transitions[old_status]:
+                raise ValidationError(
+                    f"Недопустимый переход статуса из {old_status} в {self.status}"
+                )
+
+    def save(self, *args, **kwargs):  # Обновлено
+        if not self.pk:
+            self.total_price = self.calculate_total_cost()
+        super().save(*args, **kwargs)
+
+    def calculate_total_cost(self):
+        return self.items.aggregate(
+            total=Sum(F('price') * F('quantity'))
+        )['total'] or 0
+
+    def get_absolute_url(self):  # Добавлено
+        return reverse('orders:order_detail', kwargs={'pk': self.pk})
+
+    def update_status(self, new_status):
+        self.status = new_status
+        self.save(update_fields=['status'])
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(
@@ -73,11 +105,11 @@ class OrderItem(models.Model):
     )
     product = models.ForeignKey(
         Product,
-        on_delete=models.SET_NULL,  # Сохраняем товар даже если он удален
+        on_delete=models.SET_NULL,
         null=True,
         verbose_name="Товар"
     )
-    name_snapshot = models.CharField("Название товара", max_length=255, blank=True)  # Снапшот названия
+    name_snapshot = models.CharField("Название товара", max_length=255, blank=True)
     price = models.DecimalField("Цена", max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField("Количество", default=1)
 
@@ -98,7 +130,11 @@ class OrderItem(models.Model):
         return self.price * self.quantity
 
     def save(self, *args, **kwargs):
-        # Сохраняем снапшот названия при создании
         if not self.pk and self.product:
             self.name_snapshot = self.product.name
+            self.price = self.product.price  # Актуальная цена на момент заказа
+
         super().save(*args, **kwargs)
+        if self.order_id:  # Обновление итоговой суммы заказа
+            self.order.total_price = self.order.calculate_total_cost()
+            self.order.save(update_fields=['total_price'])

@@ -1,132 +1,199 @@
-/* Все стили изолированы через .compare-container */
 .compare-container {
     --primary-light: #e8f4ff;
     --success-light: #e8f5e9;
     --warning-light: #fff3cd;
+    --danger-light: #f8d7da;
     --border-color: #dee2e6;
-    --shadow: 0 4px 15px rgba(0,0,0,0.05);
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.compare-container .compare-heading {
+/* Заголовок и общие стили */
+.compare-heading {
     text-align: center;
-    margin-bottom: 3rem;
-    color: var(--cfg-dark);
+    margin: 2rem 0 4rem;
+    position: relative;
+    font-size: 2.5rem;
+}
+
+.compare-heading::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--cfg-primary) 0%, #0066cc 100%);
+    margin: 1.5rem auto 0;
+    border-radius: 2px;
+}
+
+/* Контролы сравнения */
+.compare-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.notification-badge {
+    background: var(--cfg-primary);
+    color: white;
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* Таблица сравнения */
+.compare-table {
+    width: 100%;
+    min-width: 800px;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
     position: relative;
 }
 
-.compare-container .compare-heading::after {
-    content: '';
-    display: block;
-    width: 100px;
-    height: 3px;
-    background: var(--cfg-primary);
-    margin: 1rem auto;
+.compare-table th,
+.compare-table td {
+    padding: 1.2rem;
+    vertical-align: top;
 }
 
-.compare-container .table-responsive {
-    overflow-x: auto;
-    min-height: 300px;
-    border-radius: 15px;
-    box-shadow: var(--shadow);
-}
-
-.compare-container .compare-table {
-    width: 100%;
-    min-width: 600px;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-.compare-container .compare-header {
-    background: var(--cfg-primary);
+/* Заголовок характеристик */
+.compare-header {
+    background: var(--cfg-dark);
     color: white;
-    font-weight: 600;
-    padding: 1.5rem;
     position: sticky;
     left: 0;
-    z-index: 2;
-}
-
-.compare-container .product-header {
-    background: var(--cfg-light);
-    font-weight: 600;
-    padding: 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-
-.compare-container .product-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.compare-container .remove-btn {
-    color: var(--cfg-danger);
-    font-size: 1.2rem;
-    margin-top: 0.5rem;
-    transition: color 0.3s;
-}
-
-.compare-container .remove-btn:hover {
-    color: #c82333;
-}
-
-.compare-container .group-row {
-    background: var(--primary-light);
-    font-weight: 600;
-    padding: 1rem;
-}
-
-.compare-container .attr-name {
-    background: var(--cfg-light);
-    padding: 1rem;
+    z-index: 3;
     min-width: 250px;
-    border-right: 1px solid var(--border-color);
+    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.05);
 }
 
-.compare-container .attr-value {
+/* Карточка товара */
+.product-card {
+    position: relative;
     padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    background: white;
+    border-radius: 12px;
+    transition: var(--transition);
 }
 
-.compare-container tr.attr-row:nth-child(odd) {
-    background: var(--gray-100);
-}
-
-.compare-container tr.attr-row:hover {
-    background: var(--warning-light);
-    transition: background 0.3s;
-}
-
-.compare-container .empty-compare {
-    text-align: center;
-    padding: 4rem 2rem;
-    border-radius: 15px;
+.product-image {
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+    margin-bottom: 1rem;
+    border-radius: 8px;
     background: var(--cfg-light);
-    box-shadow: var(--shadow);
+    padding: 0.5rem;
 }
 
-.compare-container .empty-compare .btn {
-    margin-top: 1.5rem;
-    padding: 1rem 3rem;
-    border-radius: 30px;
-    font-weight: 600;
+.remove-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cfg-danger);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.product-card:hover .remove-btn {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Группы атрибутов */
+.group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+}
+
+.group-row {
+    background: var(--cfg-light);
+    border-left: 4px solid var(--cfg-primary);
+}
+
+/* Строки характеристик */
+.attr-row {
+    transition: var(--transition);
+}
+
+.attr-row.highlight {
+    background: var(--warning-light) !important;
+    box-shadow: inset 4px 0 0 var(--cfg-warning);
+}
+
+.attr-value {
+    position: relative;
+    font-weight: 500;
+}
+
+.unit {
+    color: var(--cfg-secondary);
+    font-size: 0.9em;
+    margin-left: 0.3rem;
+}
+
+/* Иконки и бейджи */
+.critical-badge {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    background: var(--cfg-danger);
+    color: white;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    margin-left: 0.5rem;
 }
 
 /* Адаптивность */
+@media (max-width: 992px) {
+    .product-image {
+        width: 140px;
+        height: 140px;
+    }
+
+    .compare-table th,
+    .compare-table td {
+        padding: 1rem;
+    }
+}
+
 @media (max-width: 768px) {
-    .compare-container .compare-table {
-        min-width: 400px;
+    .compare-heading {
+        font-size: 2rem;
+        margin-bottom: 3rem;
     }
 
-    .compare-container .attr-name {
-        font-size: 0.9rem;
+    .product-card {
+        padding: 0.8rem;
     }
 
-    .compare-container .product-info {
-        flex-direction: row;
-        justify-content: space-between;
+    .remove-btn {
+        opacity: 1;
+        transform: scale(0.9);
+    }
+}
+
+@media (max-width: 576px) {
+    .compare-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .notification-badge {
+        order: -1;
+        text-align: center;
     }
 }

@@ -3,8 +3,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
-from products.models import Product, Category
-from .models import Build
+from apps.products.models import Product
+from apps.catalog_config.models import Category
+from apps.configurator.models import Build
 
 # Словарь соответствия слагов категорий полям модели Build
 CATEGORY_FIELD_MAP = {
