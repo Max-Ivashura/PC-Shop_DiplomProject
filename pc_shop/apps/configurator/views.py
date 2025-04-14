@@ -1,160 +1,166 @@
 import json
-from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
+from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 from apps.catalog_config.models import Category
-from apps.configurator.models import Build, BuildComponent, CompatibilityRule
 from apps.products.models import Product
-
-
-@csrf_exempt
-@login_required
-def save_build_api(request):
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Only POST method allowed'}, status=405)
-
-    try:
-        data = json.loads(request.body)
-        components = data.get('components', [])
-        name = data.get('name', 'Unnamed Build')
-
-        # Валидация данных
-        if not components:
-            raise ValidationError("Components list is required")
-
-        with transaction.atomic():
-            build = Build.objects.create(
-                user=request.user,
-                name=name,
-                description=data.get('description', '')
-            )
-
-            for component in components:
-                content_type = ContentType.objects.get(id=component['component_type_id'])
-                product = content_type.get_object_for_this_type(id=component['product_id'])
-
-                BuildComponent.objects.create(
-                    build=build,
-                    component_type=content_type,
-                    object_id=product.id,
-                    selected_options=component.get('options', {})
-                )
-
-            # Проверка совместимости
-            compatibility_errors = build.check_compatibility()
-
-            return JsonResponse({
-                'success': True,
-                'build_id': build.id,
-                'compatibility_errors': compatibility_errors
-            })
-
-    except ContentType.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Invalid component type'}, status=400)
-    except Product.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Product not found'}, status=404)
-    except ValidationError as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=400)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)
+from .models import Build, BuildComponent, ComponentType, CompatibilityRule
 
 
 @login_required
+@require_http_methods(["GET"])
 def configurator(request):
-    categories = Category.objects.filter(
-        name__in=['Процессоры', 'Видеокарты', 'Материнские платы',
-                  'Оперативная память', 'Блоки питания', 'Накопители',
-                  'Системы охлаждения']
-    ).prefetch_related('products')
-
-    component_types = ContentType.objects.filter(
-        app_label='products',
-        model__in=[cat.name.lower().replace(' ', '') for cat in categories]
-    )
-
+    """Главная страница конфигуратора"""
+    component_types = ComponentType.objects.all().order_by('order')
     return render(request, 'configurator/configurator.html', {
-        'categories': categories,
         'component_types': component_types
     })
 
 
+@csrf_exempt
 @login_required
-def save_build(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
+@require_http_methods(["POST"])
+def save_build_api(request):
+    """API для сохранения сборки"""
+    try:
+        data = json.loads(request.body)
+        with transaction.atomic():
             build = Build.objects.create(
                 user=request.user,
                 name=data.get('name', 'Новая сборка'),
                 description=data.get('description', '')
             )
 
-            for component in data.get('components', []):
-                content_type = ContentType.objects.get(id=component['component_type_id'])
-                BuildComponent.objects.create(
-                    build=build,
-                    component_type=content_type,
-                    object_id=component['product_id'],
-                    selected_options=component.get('options', {})
+            for component_data in data.get('components', []):
+                component_type = get_object_or_404(
+                    ComponentType,
+                    id=component_data['type_id']
+                )
+                product = get_object_or_404(
+                    Product,
+                    id=component_data['product_id']
                 )
 
-            errors = build.check_compatibility()
+                BuildComponent.objects.create(
+                    build=build,
+                    component_type=component_type,
+                    product=product
+                )
+
+            compatibility_result = build.check_compatibility()
+
+            if not compatibility_result['is_valid']:
+                build.delete()
+                return JsonResponse({
+                    'status': 'error',
+                    'errors': compatibility_result['errors']
+                }, status=400)
+
             return JsonResponse({
-                'success': True,
+                'status': 'success',
                 'build_id': build.id,
-                'errors': errors
+                'total_price': str(build.total_price)
             })
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)}, status=400)
-    return JsonResponse({'success': False}, status=405)
+
+    except ValidationError as e:
+        return JsonResponse({'status': 'error', 'errors': e.messages}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'errors': [str(e)]}, status=500)
 
 
 @csrf_exempt
+@require_http_methods(["POST"])
 def check_compatibility_api(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            components = {}
-            for item in data.get('components', []):
-                content_type = ContentType.objects.get(id=item['component_type_id'])
-                components[content_type] = Product.objects.get(id=item['product_id'])
+    """API для проверки совместимости компонентов"""
+    try:
+        data = json.loads(request.body)
+        components = {}
 
-            # Здесь должна быть логика проверки совместимости
-            # Возвращаем заглушку
-            return JsonResponse({'errors': []})
-        except Exception as e:
-            return JsonResponse({'errors': [str(e)]}, status=400)
+        for item in data.get('components', []):
+            component_type = get_object_or_404(
+                ComponentType,
+                id=item['type_id']
+            )
+            product = get_object_or_404(
+                Product,
+                id=item['product_id']
+            )
+            components[component_type] = product
+
+        # Временная сборка для проверки
+        temp_build = Build(user=request.user if request.user.is_authenticated else None)
+        compatibility_result = temp_build.check_compatibility(components)
+
+        return JsonResponse({
+            'valid': compatibility_result['is_valid'],
+            'errors': compatibility_result.get('errors', []),
+            'warnings': compatibility_result.get('warnings', [])
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+def get_components_api(request, type_id):
+    """Получение товаров для конкретного типа компонента"""
+    try:
+        component_type = get_object_or_404(ComponentType, id=type_id)
+        products = Product.objects.filter(
+            category=component_type.linked_category
+        ).prefetch_related('attributes').values(
+            'id',
+            'name',
+            'price',
+            'image',
+            'attributes__attribute__name',
+            'attributes__value'
+        )
+
+        return JsonResponse(list(products), safe=False)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
 
 
 @login_required
 def build_detail(request, build_id):
-    build = get_object_or_404(Build, id=build_id)
+    """Детализация сборки"""
+    build = get_object_or_404(Build, id=build_id, user=request.user)
     return render(request, 'configurator/build_detail.html', {
         'build': build,
-        'compatibility_errors': build.check_compatibility()
+        'compatibility': build.check_compatibility()
     })
 
 
 @login_required
 def delete_build(request, build_id):
+    """Удаление сборки"""
     build = get_object_or_404(Build, id=build_id, user=request.user)
     build.delete()
-    return redirect('community_builds')
+    return JsonResponse({'status': 'success'})
 
 
+@login_required
 def community_builds(request):
-    builds = Build.objects.filter(is_public=True).select_related('user').prefetch_related('components')
-    return render(request, 'configurator/community_builds.html', {'builds': builds})
+    """Публичные сборки сообщества"""
+    builds = Build.objects.filter(is_public=True).select_related(
+        'user'
+    ).prefetch_related(
+        'components__product'
+    )
+    return render(request, 'configurator/community.html', {'builds': builds})
 
 
-@csrf_exempt
-def get_components_api(request, category_slug):
-    if request.method == 'GET':
-        category = get_object_or_404(Category, slug=category_slug)
-        products = category.products.values('id', 'name', 'price', 'image')
-        return JsonResponse(list(products), safe=False)
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+@login_required
+def toggle_build_visibility(request, build_id):
+    """Переключение видимости сборки"""
+    build = get_object_or_404(Build, id=build_id, user=request.user)
+    build.is_public = not build.is_public
+    build.save()
+    return JsonResponse({'status': 'success', 'is_public': build.is_public})

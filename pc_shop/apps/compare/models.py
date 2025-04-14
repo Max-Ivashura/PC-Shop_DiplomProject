@@ -1,9 +1,11 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.urls import reverse
 from django.conf import settings
-from apps.products.models import Product, Category
+from apps.products.models import Product
+from apps.catalog_config.models import Category, ProductAttributeValue
 
 
 class Comparison(models.Model):

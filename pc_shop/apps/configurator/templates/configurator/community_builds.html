@@ -1,140 +1,306 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load humanize %}
+{% load configurator_tags %}
 
 {% block css %}
-<link rel="stylesheet" href="{% static 'configurator/css/community_builds.css' %}">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'configurator/css/community_builds.min.css' %}">
 {% endblock %}
 
-{% block title %}Сборки сообщества{% endblock %}
+{% block title %}Публичные сборки{% endblock %}
 
 {% block content %}
-<div class="community-builds-container">
-  <h1 class="builds-heading">Сборки от пользователей</h1>
-
-  <!-- Фильтры и сортировка -->
-  <div class="filters-bar">
-    <div class="filter-group">
-      <label for="sort">Сортировать:</label>
-      <select id="sort" class="form-select">
-        <option value="newest">Новые первыми</option>
-        <option value="oldest">Старые первыми</option>
-        <option value="popular">Популярные</option>
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <input type="text" id="searchBuilds" placeholder="Поиск по сборкам..." class="form-control">
-    </div>
-  </div>
-
-  <!-- Сетка сборок -->
-  <div class="builds-grid" id="buildsList">
-    {% for build in builds %}
-    <div class="build-card-wrapper">
-      <div class="card build-card h-100">
-        <div class="card-header d-flex justify-content-between">
-          <div class="user-info">
-            <img src="{{ build.user.profile.avatar.url|default:'/static/images/default-avatar.png' }}"
-                 alt="Avatar" class="avatar me-2">
-            <span class="username">{{ build.user.username }}</span>
-          </div>
-          <span class="date">{{ build.created_at|naturaltime }}</span>
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">Сборки сообщества</h1>
+            <a href="{% url 'configurator:main' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Создать свою
+            </a>
         </div>
 
-        <div class="card-body">
-          <h5 class="card-title">{{ build.name }}</h5>
-          <p class="card-text">{{ build.description|truncatewords:15 }}</p>
-
-          <!-- Основные компоненты -->
-          <div class="components-preview">
-            {% for component in build.components.all|slice:":3" %}
-            <div class="component-item">
-              <i class="fas fa-microchip"></i>
-              {{ component.component_type }}: {{ component.content_object.name|truncatewords:5 }}
+        <!-- Фильтры -->
+        <div class="row mb-4 g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control"
+                       placeholder="Поиск по названию..."
+                       id="searchInput">
             </div>
+            <div class="col-md-3">
+                <select class="form-select" id="sortSelect">
+                    <option value="-created_at">Сначала новые</option>
+                    <option value="created_at">Сначала старые</option>
+                    <option value="-total_price">Дорогие сборки</option>
+                    <option value="total_price">Дешёвые сборки</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="componentFilter">
+                    <option value="">Все компоненты</option>
+                    {% for ct in component_types %}
+                        <option value="{{ ct.id }}">{{ ct.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100"
+                        id="resetFilters">Сбросить
+                </button>
+            </div>
+        </div>
+
+        <!-- Сетка сборок -->
+        <div class="row g-4" id="buildsContainer">
+            {% for build in builds %}
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card h-100 build-card">
+                        <!-- Заголовок карточки -->
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ build.user.avatar.url|default:'/static/img/avatar.png' }}"
+                                         class="avatar rounded-circle me-2">
+                                    <div>
+                                        <div class="fw-bold">{{ build.user.username }}</div>
+                                        <small class="text-muted">{{ build.created_at|naturaltime }}</small>
+                                    </div>
+                                </div>
+                                {% if build.is_public %}
+                                    <i class="fas fa-globe-americas text-primary"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Тело карточки -->
+                        <div class="card-body">
+                            <h5 class="card-title">{{ build.name }}</h5>
+                            <p class="card-text text-muted small">
+                                {{ build.description|truncatechars:100 }}
+                            </p>
+
+                            <!-- Список компонентов -->
+                            <div class="components-list mb-3">
+                                {% for component in build.components.all|slice:":4" %}
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="component-icon me-2">
+                                            <i class="fas fa-{{ component.component_type.icon }}"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold small">{{ component.component_type.name }}</div>
+                                            <div class="text-truncate small">
+                                                {{ component.product.name }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Футер карточки -->
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex flex-column">
+                                    <span class="text-muted small">Стоимость:</span>
+                                    <span class="fw-bold">{{ build.total_price|intcomma }} ₽</span>
+                                </div>
+                                <a href="{% url 'configurator:build_detail' build.id %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Подробнее
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Бейдж совместимости -->
+                        <div class="card-footer bg-transparent">
+                            {% with compatibility=build.check_compatibility %}
+                                <div class="d-flex justify-content-between small">
+                                    <span>Совместимость:</span>
+                                    <span class="{% if compatibility.is_valid %}text-success{% else %}text-danger{% endif %}">
+              {% if compatibility.is_valid %}
+                  <i class="fas fa-check-circle"></i> Полная
+              {% else %}
+                  <i class="fas fa-times-circle"></i> {{ compatibility.errors|length }} ошибок
+              {% endif %}
+            </span>
+                                </div>
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center py-5">
+                    <div class="display-5 text-muted mb-3">😕</div>
+                    <h3>Сборок пока нет</h3>
+                    <p>Будьте первым, кто поделится своей конфигурацией!</p>
+                </div>
             {% endfor %}
-            {% if build.components.count > 3 %}
-            <div class="component-item more-components">
-              + {{ build.components.count|add:"-3" }} компонента
-            </div>
-            {% endif %}
-          </div>
-
-          <!-- Совместимость -->
-          <div class="compatibility-status mt-3">
-            {% if build.check_compatibility %}
-              <span class="badge bg-success">Совместима</span>
-            {% else %}
-              <span class="badge bg-danger">Проблемы совместимости</span>
-            {% endif %}
-          </div>
         </div>
 
-        <div class="card-footer">
-          <a href="{% url 'build_detail' build.id %}" class="btn btn-view w-100">
-            <i class="fas fa-eye me-2"></i>Подробнее
-          </a>
-        </div>
-      </div>
-    </div>
-    {% empty %}
-    <div class="col-12 text-center">
-      <p class="no-builds">Пока нет сборок от пользователей</p>
-    </div>
-    {% endfor %}
-  </div>
+        <!-- Пагинация -->
+        {% if is_paginated %}
+            <nav class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                        </li>
+                    {% endif %}
 
-  <!-- Пагинация -->
-  <div class="pagination-container mt-4">
-    {% if builds.has_other_pages %}
-    <nav aria-label="Page navigation">
-      <ul class="pagination justify-content-center">
-        {% if builds.has_previous %}
-        <li class="page-item">
-          <a class="page-link" href="?page={{ builds.previous_page_number }}">Назад</a>
-        </li>
+                    {% for num in paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Вперед</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
         {% endif %}
+    </div>
+{% endblock %}
 
-        {% for num in builds.paginator.page_range %}
-        <li class="page-item {% if builds.number == num %}active{% endif %}">
-          <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-        </li>
-        {% endfor %}
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const filters = {
+                search: '',
+                sort: '-created_at',
+                component: ''
+            };
 
-        {% if builds.has_next %}
-        <li class="page-item">
-          <a class="page-link" href="?page={{ builds.next_page_number }}">Вперед</a>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
-    {% endif %}
-  </div>
-</div>
+            // Обработчики фильтров
+            document.getElementById('searchInput').addEventListener('input', function (e) {
+                filters.search = e.target.value;
+                updateBuilds();
+            });
 
-<!-- Микроразметка Schema.org -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "ItemList",
-  "itemListElement": [
-    {% for build in builds %}
-    {
-      "@type": "ListItem",
-      "position": {{ forloop.counter }},
-      "url": "{{ build.get_absolute_url }}",
-      "name": "{{ build.name }}",
-      "description": "{{ build.description|truncatewords:15 }}",
-      "author": {
-        "@type": "Person",
-        "name": "{{ build.user.username }}"
-      },
-      "dateCreated": "{{ build.created_at|date:'c' }}"
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-  ]
-}
-</script>
+            document.getElementById('sortSelect').addEventListener('change', function (e) {
+                filters.sort = e.target.value;
+                updateBuilds();
+            });
+
+            document.getElementById('componentFilter').addEventListener('change', function (e) {
+                filters.component = e.target.value;
+                updateBuilds();
+            });
+
+            document.getElementById('resetFilters').addEventListener('click', function () {
+                filters.search = '';
+                filters.sort = '-created_at';
+                filters.component = '';
+                document.getElementById('searchInput').value = '';
+                document.getElementById('sortSelect').value = '-created_at';
+                document.getElementById('componentFilter').value = '';
+                updateBuilds();
+            });
+
+            // Обновление списка сборок
+            async function updateBuilds() {
+                const params = new URLSearchParams(filters);
+                try {
+                    const response = await fetch(`/configurator/api/community/?${params}`);
+                    const data = await response.json();
+                    renderBuilds(data.results);
+                } catch (error) {
+                    console.error('Ошибка загрузки:', error);
+                }
+            }
+
+            // Рендер результатов
+            function renderBuilds(builds) {
+                const container = document.getElementById('buildsContainer');
+                container.innerHTML = builds.length > 0
+                    ? builds.map(build => buildTemplate(build)).join('')
+                    : emptyTemplate();
+            }
+
+            // Шаблон пустого состояния
+            function emptyTemplate() {
+                return `
+                          <div class="col-12 text-center py-5">
+                            <div class="display-5 text-muted mb-3">😕</div>
+                            <h3>Ничего не найдено</h3>
+                            <p>Попробуйте изменить параметры фильтров</p>
+                          </div>
+                        `;
+            }
+
+            // Шаблон карточки сборки
+            function buildTemplate(build) {
+                return `
+                        <div class="col-12 col-md-6 col-xl-4">
+                          <div class="card h-100 build-card">
+                            <div class="card-header bg-light">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                  <img src="${build.user.avatar || '/static/img/avatar.png'}"
+                                       class="avatar rounded-circle me-2"
+                                       alt="${build.user.username}"
+                                       style="width: 40px; height: 40px;">
+                                  <div>
+                                    <div class="fw-bold">${build.user.username}</div>
+                                    <small class="text-muted">${new Date(build.created_at).toLocaleDateString()}</small>
+                                  </div>
+                                </div>
+                                ${build.is_public ? '<i class="fas fa-globe-americas text-primary"></i>' : ''}
+                              </div>
+                            </div>
+
+                            <div class="card-body">
+                              <h5 class="card-title">${build.name}</h5>
+                              <p class="card-text text-muted small">
+                                ${build.description ? build.description.substring(0, 100) + '...' : ''}
+                              </p>
+
+                              <div class="components-list mb-3">
+                                ${build.components.slice(0, 4).map(component => `
+                                  <div class="d-flex align-items-center mb-2">
+                                    <div class="component-icon me-2">
+                                      <i class="fas fa-${component.component_type.icon || 'microchip'}"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                      <div class="fw-bold small">${component.component_type.name}</div>
+                                      <div class="text-truncate small">
+                                        ${component.product.name}
+                                      </div>
+                                    </div>
+                                  </div>
+                                `).join('')}
+                              </div>
+
+                              <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex flex-column">
+                                  <span class="text-muted small">Стоимость:</span>
+                                  <span class="fw-bold">${new Intl.NumberFormat('ru-RU').format(build.total_price)} ₽</span>
+                                </div>
+                                <a href="/configurator/build/${build.id}/"
+                                   class="btn btn-sm btn-outline-primary">
+                                  Подробнее
+                                </a>
+                              </div>
+                            </div>
+
+                            <div class="card-footer bg-transparent">
+                              <div class="d-flex justify-content-between small">
+                                <span>Совместимость:</span>
+                                <span class="${build.compatibility.is_valid ? 'text-success' : 'text-danger'}">
+                                  ${build.compatibility.is_valid ?
+                                        '<i class="fas fa-check-circle"></i> Полная' :
+                                        `<i class="fas fa-times-circle"></i> ${build.compatibility.errors.length} ошибок`}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      `;
+            }
+        });
+    </script>
 {% endblock %}

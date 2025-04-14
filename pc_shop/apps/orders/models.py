@@ -5,15 +5,15 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from apps.products.models import Product
 
+STATUS_CHOICES = [
+    ('processing', 'В обработке'),
+    ('shipped', 'Отправлен'),
+    ('delivered', 'Доставлен'),
+    ('canceled', 'Отменен'),
+]
+
 
 class Order(models.Model):
-    STATUS_CHOICES = [
-        ('processing', 'В обработке'),
-        ('shipped', 'Отправлен'),
-        ('delivered', 'Доставлен'),
-        ('canceled', 'Отменен'),
-    ]
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

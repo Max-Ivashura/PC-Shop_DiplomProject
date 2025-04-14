@@ -1,198 +1,209 @@
-class Configurator {
-  constructor(options) {
-    this.categories = options.categories;
-    this.componentTypes = options.componentTypes;
-    this.compatibilityCheckUrl = options.compatibilityCheckUrl;
-    this.saveBuildUrl = options.saveBuildUrl;
-    this.componentListUrl = options.componentListUrl.replace('CATEGORY_SLUG', '');
+class ConfiguratorApp {
+    constructor(config) {
+        this.api = config.api;
+        this.componentTypes = config.componentTypes;
+        this.selectedComponents = new Map();
+        this.currentType = null;
 
-    this.selectedComponents = {};
-    this.compatibilityErrors = [];
-    this.totalPrice = 0;
+        this.initDOMReferences();
+        this.initEventListeners();
+        this.loadInitialData();
+    }
 
-    this.initEventListeners();
-    this.updateBuildVisualization();
-  }
+    initDOMReferences() {
+        this.dom = {
+            componentSlots: document.getElementById('componentSlots'),
+            componentList: document.getElementById('componentList'),
+            componentSearch: document.getElementById('componentSearch'),
+            totalPrice: document.querySelector('.total-price'),
+            compatibilityScore: document.getElementById('compatibilityScore'),
+            saveModal: new bootstrap.Modal('#saveModal')
+        };
+    }
 
-  initEventListeners() {
-    document.getElementById('componentCategory').addEventListener('change', (e) => {
-      this.loadComponents(e.target.value);
-    });
+    initEventListeners() {
+        // Выбор типа компонента
+        document.getElementById('componentTypeSelect').addEventListener('change', e => {
+            this.currentType = this.componentTypes.find(t => t.id == e.target.value);
+            this.loadComponents();
+        });
 
-    document.getElementById('componentList').addEventListener('click', (e) => {
-      if (e.target.classList.contains('select-component')) {
-        const componentData = JSON.parse(e.target.dataset.component);
-        this.selectComponent(componentData);
-      }
-    });
+        // Поиск компонентов
+        this.dom.componentSearch.addEventListener('input', () => this.loadComponents());
 
-    document.getElementById('checkCompatibilityBtn').addEventListener('click', () => {
-      this.checkCompatibility();
-    });
+        // Выбор компонента
+        this.dom.componentList.addEventListener('click', e => {
+            if (e.target.closest('.component-item')) {
+                const productId = e.target.dataset.productId;
+                this.selectComponent(productId);
+            }
+        });
 
-    document.getElementById('saveBuildBtn').addEventListener('click', () => {
-      this.saveBuild();
-    });
-  }
+        // Сохранение сборки
+        document.getElementById('confirmSave').addEventListener('click', () => this.saveBuild());
+    }
 
-  async loadComponents(categorySlug) {
-    try {
-      const response = await fetch(this.componentListUrl + categorySlug + '/');
-      const components = await response.json();
+    async loadInitialData() {
+        // Загрузка первого типа компонентов
+        this.currentType = this.componentTypes[0];
+        document.getElementById('componentTypeSelect').value = this.currentType.id;
+        await this.loadComponents();
+    }
 
-      const list = document.getElementById('componentList');
-      list.innerHTML = components.map(component => `
-        <div class="card mb-2 component-item">
-          <div class="card-body d-flex justify-content-between">
+    async loadComponents() {
+        try {
+            const url = this.api.components
+                    .replace('0', this.currentType.id)
+                + `?search=${encodeURIComponent(this.dom.componentSearch.value)}`;
+
+            const response = await fetch(url);
+            const components = await response.json();
+
+            this.renderComponentList(components);
+        } catch (error) {
+            console.error('Ошибка загрузки компонентов:', error);
+        }
+    }
+
+    renderComponentList(components) {
+        this.dom.componentList.innerHTML = components.map(component => `
+      <div class="component-item card mb-2">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
             <div>
-              <h6>${component.name}</h6>
-              <small>${component.specs}</small>
+              <h6 class="mb-1">${component.name}</h6>
+              ${component.attributes.map(attr => `
+                <div class="text-muted small">
+                  <span>${attr.name}:</span>
+                  <strong>${attr.value} ${attr.unit || ''}</strong>
+                </div>
+              `).join('')}
             </div>
-            <div class="d-flex flex-column align-items-end">
-              <span class="price">${component.price} ₽</span>
-              <button class="btn btn-sm btn-primary select-component"
-                      data-component='${JSON.stringify(component)}'>
-                Выбрать
-              </button>
-            </div>
+            <button class="btn btn-sm btn-primary" 
+                    data-product-id="${component.id}">
+              Выбрать
+            </button>
           </div>
         </div>
-      `).join('');
-    } catch (error) {
-      console.error('Ошибка загрузки компонентов:', error);
-    }
-  }
-
-  selectComponent(component) {
-    const componentType = this.componentTypes.find(
-      ct => ct.model.toLowerCase() === component.category.toLowerCase()
-    );
-
-    if (!componentType) {
-      alert('Неизвестный тип компонента');
-      return;
+      </div>
+    `).join('');
     }
 
-    this.selectedComponents[componentType.id] = {
-      component_type_id: componentType.id,
-      product_id: component.id,
-      options: {}
-    };
+    async selectComponent(productId) {
+        try {
+            const response = await fetch(`/api/products/${productId}/`);
+            const product = await response.json();
 
-    this.updateBuildVisualization();
-    this.updateTotalPrice();
-    this.checkCompatibility();
-  }
+            this.selectedComponents.set(this.currentType.id, {
+                type: this.currentType,
+                product: product
+            });
 
-  updateBuildVisualization() {
-    const slots = document.querySelectorAll('.component-slot');
-    slots.forEach(slot => {
-      const type = slot.dataset.componentType;
-      const componentType = this.componentTypes.find(ct => ct.model.toLowerCase() === type);
-
-      if (componentType && this.selectedComponents[componentType.id]) {
-        const component = this.selectedComponents[componentType.id];
-        slot.querySelector('.component-name').textContent = component.name;
-        slot.querySelector('.component-icon').src = component.image;
-      }
-    });
-  }
-
-  async checkCompatibility() {
-    try {
-      const response = await fetch(this.compatibilityCheckUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': this.getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-          components: Object.values(this.selectedComponents)
-        })
-      });
-
-      const result = await response.json();
-      this.compatibilityErrors = result.errors || [];
-      this.updateCompatibilityStatus();
-    } catch (error) {
-      console.error('Ошибка проверки совместимости:', error);
-    }
-  }
-
-  updateCompatibilityStatus() {
-    const alert = document.getElementById('compatibilityAlert');
-    const message = document.getElementById('compatibilityMessage');
-    const progressBar = document.getElementById('compatibilityProgress');
-
-    if (this.compatibilityErrors.length > 0) {
-      message.innerHTML = this.compatibilityErrors.join('<br>');
-      alert.classList.remove('d-none');
-      progressBar.className = 'progress-bar bg-danger';
-      progressBar.style.width = '33%';
-      progressBar.textContent = 'Проблемы совместимости';
-    } else {
-      alert.classList.add('d-none');
-      progressBar.className = 'progress-bar bg-success';
-      progressBar.style.width = '100%';
-      progressBar.textContent = 'Полная совместимость';
-    }
-  }
-
-  updateTotalPrice() {
-    this.totalPrice = Object.values(this.selectedComponents).reduce(
-      (sum, component) => sum + component.price, 0
-    );
-    document.getElementById('totalPrice').textContent = `${this.totalPrice} ₽`;
-  }
-
-  async saveBuild() {
-    try {
-      const response = await fetch(this.saveBuildUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': this.getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-          name: prompt('Введите название сборки') || 'Новая сборка',
-          components: Object.values(this.selectedComponents)
-        })
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        window.location.href = `/build/${result.build_id}/`;
-      } else {
-        alert(`Ошибка: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Ошибка сохранения:', error);
-    }
-  }
-
-  getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
+            this.updateUI();
+            this.checkCompatibility();
+        } catch (error) {
+            console.error('Ошибка выбора компонента:', error);
         }
-      }
     }
-    return cookieValue;
-  }
-}
 
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-  const configurator = new Configurator({
-    categories: JSON.parse(document.getElementById('componentCategory').dataset.categories),
-    componentTypes: JSON.parse(document.getElementById('componentCategory').dataset.componentTypes),
-    compatibilityCheckUrl: '/api/check-compatibility/',
-    saveBuildUrl: '/api/save-build/',
-    componentListUrl: '/api/components/'
-  });
-});
+    updateUI() {
+        // Обновление слотов
+        this.dom.componentSlots.innerHTML = this.componentTypes.map(type => {
+            const component = this.selectedComponents.get(type.id);
+            return `
+        <div class="component-slot ${type.required ? 'required' : ''}" 
+             data-type-id="${type.id}">
+          <div class="slot-header">
+            <i class="fas fa-${type.icon} me-2"></i>
+            ${type.name}
+            ${type.required ? '<span class="required-badge">Обязательно</span>' : ''}
+          </div>
+          <div class="slot-body">
+            ${component ? `
+              <div class="selected-component">
+                <div class="name">${component.product.name}</div>
+                <div class="price">${component.product.price.toLocaleString()} ₽</div>
+              </div>
+            ` : '<div class="empty-slot">Не выбрано</div>'}
+          </div>
+        </div>
+      `;
+        }).join('');
+
+        // Общая стоимость
+        const total = Array.from(this.selectedComponents.values())
+            .reduce((sum, c) => sum + c.product.price, 0);
+
+        this.dom.totalPrice.textContent = `${total.toLocaleString()} ₽`;
+    }
+
+    async checkCompatibility() {
+        try {
+            const components = Array.from(this.selectedComponents.values())
+                .map(c => ({type_id: c.type.id, product_id: c.product.id}));
+
+            const response = await fetch(this.api.check, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify({components})
+            });
+
+            const result = await response.json();
+            this.updateCompatibilityUI(result);
+        } catch (error) {
+            console.error('Ошибка проверки совместимости:', error);
+        }
+    }
+
+    updateCompatibilityUI(result) {
+        const score = result.is_valid ? 100 : Math.max(100 - result.errors.length * 20, 0);
+        this.dom.compatibilityScore.textContent = `Совместимость: ${score}%`;
+
+        // Подсветка проблемных слотов
+        document.querySelectorAll('.component-slot').forEach(slot => {
+            const typeId = parseInt(slot.dataset.typeId);
+            const hasError = result.errors.some(e => e.component_type === typeId);
+            slot.classList.toggle('has-error', hasError);
+        });
+    }
+
+    async saveBuild() {
+        try {
+            const formData = {
+                name: document.getElementById('saveForm').elements.name.value,
+                description: document.getElementById('saveForm').elements.description.value,
+                is_public: document.getElementById('saveForm').elements.is_public.checked,
+                components: Array.from(this.selectedComponents.values()).map(c => ({
+                    component_type: c.type.id,
+                    product: c.product.id
+                }))
+            };
+
+            const response = await fetch(this.api.save, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                window.location.href = `/configurator/build/${result.build_id}/`;
+            } else {
+                alert(`Ошибка: ${result.error}`);
+            }
+        } catch (error) {
+            console.error('Ошибка сохранения:', error);
+        }
+    }
+
+    getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+}
