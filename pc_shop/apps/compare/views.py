@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.contrib.sessions.models import Session
 from django.conf import settings
-
+from django.db.models import Q
 from apps.products.models import Product
 from apps.compare.models import Comparison, ComparisonItem
 
@@ -31,10 +31,9 @@ def _get_current_comparison(request):
 
 def _get_comparison_for_view(request):
     """Получение сравнения с оптимизированными запросами"""
-    return Comparison.objects.filter(
-        Q(user=request.user) if request.user.is_authenticated
-        else Q(session_key=request.session.session_key)
-    ).prefetch_related(
+    q_filter = Q(user=request.user) if request.user.is_authenticated else Q(session_key=request.session.session_key)
+
+    return Comparison.objects.filter(q_filter).prefetch_related(
         'products__images',
         'products__attributes__attribute__groups__group__category',
         'products__category'

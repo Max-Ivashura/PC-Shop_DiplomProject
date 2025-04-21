@@ -12,7 +12,7 @@
     <div class="compare-container">
         <h1 class="compare-heading">Сравнение товаров</h1>
 
-        {% if comparison.products.exists %}
+        {% if comparison and comparison.products.exists %}
             <div class="compare-controls">
                 <!-- Интерактивные элементы управления -->
                 <div class="controls-group">

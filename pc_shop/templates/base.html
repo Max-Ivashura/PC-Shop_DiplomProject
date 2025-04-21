@@ -42,12 +42,12 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if 'community' in request.path %}active{% endif %}"
-                       href="{% url 'community_builds' %}">
+                       href="{% url 'configurator:community' %}">
                         <i class="fas fa-cubes me-1"></i>Сборки
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if 'compare' in request.path %}active{% endif %}" href="{% url 'compare' %}">
+                    <a class="nav-link {% if 'compare' in request.path %}active{% endif %}" href="{% url 'compare:detail' %}">
                         <i class="fas fa-balance-scale me-1"></i>Сравнение
                     </a>
                 </li>
