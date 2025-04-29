@@ -6,7 +6,6 @@ from django.template.defaultfilters import time
 from django.utils.html import format_html
 from django.utils.text import slugify
 from django.urls import reverse
-from django.utils.functional import cached_property
 from sorl.thumbnail import get_thumbnail
 from django.db.models import Avg, JSONField
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
@@ -78,11 +77,11 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.name} ({self.sku})"
 
-    @cached_property
+
     def main_image(self):
         return self.images.filter(is_main=True).first() or self.images.first()
 
-    @cached_property
+
     def attributes_by_group(self):
         attributes = self.attributes.select_related(
             'attribute__groups'

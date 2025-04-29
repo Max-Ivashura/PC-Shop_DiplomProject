@@ -132,20 +132,6 @@ DEFAULT_FROM_EMAIL = 'noreply@pcshop.ru'
 # Настройки корзины
 CART_SESSION_TIMEOUT = 3600 * 2  # 2 часа
 
-# Celery
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
-CELERY_TIMEZONE = 'Europe/Moscow'
-
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        }
-    }
-}
 
 JAZZMIN_SETTINGS = {
     "related_modal_active": True,
