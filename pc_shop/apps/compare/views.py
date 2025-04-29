@@ -104,13 +104,13 @@ def compare_detail(request):
     """Детальная страница сравнения"""
     comparison = _get_comparison_for_view(request)
 
-    if not comparison or comparison.products.count() == 0:
-        return redirect('product_list')
+    # Если сравнение не найдено или пусто, инициализируем пустые данные
+    if not comparison or not comparison.products.exists():
+        attributes_matrix = {}
+    else:
+        attributes_matrix = comparison.attributes_matrix
 
-    # Оптимизированное получение матрицы атрибутов
-    attributes_matrix = comparison.attributes_matrix
-
-    return render(request, 'compare/compare_detail.html', {
+    return render(request, 'compare/compare.html', {
         'comparison': comparison,
         'attributes_matrix': attributes_matrix,
         'MAX_PRODUCTS': Comparison.MAX_PRODUCTS,

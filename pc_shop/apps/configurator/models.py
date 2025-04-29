@@ -131,6 +131,11 @@ class Build(models.Model):
         decimal_places=2,
         default=0
     )
+    is_public = models.BooleanField(
+        _("Публичная сборка"),
+        default=False,
+        help_text=_("Видна ли сборка другим пользователям")
+    )
 
     class Meta:
         verbose_name = _("Сборка")

@@ -12,7 +12,7 @@
     <div class="compare-container">
         <h1 class="compare-heading">Сравнение товаров</h1>
 
-        {% if comparison and comparison.products.exists %}
+        {% if comparison and comparison.products.exists and attributes_matrix %}
             <div class="compare-controls">
                 <!-- Интерактивные элементы управления -->
                 <div class="controls-group">
@@ -130,14 +130,11 @@
         {% else %}
             <div class="empty-compare">
                 <div class="empty-content">
-                    <img src="{% static 'compare/images/empty-compare.svg' %}"
+                    <img src="{% static 'compare/images/ab-testing.gif' %}"
                          alt="Пустое сравнение"
                          class="empty-illustration">
                     <h2>Ваш список сравнения пуст</h2>
                     <a href="{% url 'product_list' %}" class="btn btn-primary">
-                        <svg class="icon-catalog">
-                            <use xlink:href="#icon-catalog"></use>
-                        </svg>
                         Перейти в каталог
                     </a>
                 </div>

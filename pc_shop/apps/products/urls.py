@@ -1,7 +1,7 @@
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from apps.products.views import ProductListView, ProductDetailView, SearchView
+from apps.products.views import ProductListView, ProductDetailView, SearchView, AddReviewView
 
 urlpatterns = [
     # Каталог с поддержкой фильтров и сортировки
@@ -23,6 +23,9 @@ urlpatterns = [
 
     # Улучшенный поиск с фильтрацией
     path('search/', SearchView.as_view(), name='product_search'),
+
+    # Путь для добавления отзывов
+    path('product/<int:product_id>/add-review/', AddReviewView.as_view(), name='add_review'),
 ]
 
 if settings.DEBUG:

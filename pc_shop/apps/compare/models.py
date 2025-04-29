@@ -109,6 +109,9 @@ class Comparison(models.Model):
     @property
     def attributes_matrix(self):
         """Оптимизированная матрица атрибутов с группировкой"""
+        if not self.products.exists():
+            return {}
+
         attributes = {}
         products = self.products.prefetch_related(
             'attributes__attribute__groups__group__category',

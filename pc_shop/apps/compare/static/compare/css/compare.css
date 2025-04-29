@@ -197,3 +197,41 @@
         text-align: center;
     }
 }
+
+.empty-compare .empty-illustration {
+    max-width: 130px; /* Уменьшаем максимальную ширину */
+    height: auto;     /* Сохраняем пропорции */
+    margin: 0 auto 2rem;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .empty-compare .empty-illustration {
+        max-width: 180px; /* Меньший размер на мобильных */
+    }
+}
+
+.empty-compare .btn-primary {
+    padding: 0.75rem 1.5rem;    /* Уменьшаем внутренние отступы */
+    font-size: 1rem;            /* Размер текста */
+    width: auto;                /* Автоматическая ширина */
+    max-width: 240px;           /* Максимальная ширина */
+    margin: 0 auto;             /* Центрирование */
+    display: flex;              /* Для выравнивания иконки и текста */
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;               /* Расстояние между иконкой и текстом */
+}
+
+.empty-compare .empty-content {
+    text-align: center;         /* Центрируем текст */
+    display: flex;              /* Flex-контейнер */
+    flex-direction: column;     /* Элементы в колонку */
+    align-items: center;        /* Центрирование по горизонтали */
+    gap: 1.5rem;               /* Отступ между элементами */
+}
+
+.empty-compare h2 {
+    margin: 0;                  /* Убираем стандартные отступы */
+    font-size: 1.5rem;          /* Опционально: размер текста */
+}

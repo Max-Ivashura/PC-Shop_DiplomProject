@@ -62,15 +62,10 @@ class ProductAdmin(admin.ModelAdmin):
                 'price',
                 'description',
                 'is_digital',
-                'main_image_preview'
             )
         }),
         (_("Инвентаризация"), {
             'fields': ('quantity', 'is_available'),
-        }),
-        (_("SEO"), {
-            'fields': ('meta_title', 'meta_description'),
-            'classes': ('collapse',)
         }),
     )
 

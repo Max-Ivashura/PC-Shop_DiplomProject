@@ -7,9 +7,13 @@ from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie
 from django.utils.translation import gettext_lazy as _
 from django_filters.views import FilterView
-from apps.products.models import Product, ProductImage
+from apps.products.models import Product, ProductImage, Review
 from apps.products.filters import ProductFilter
 from apps.catalog_config.models import Category, Attribute
+from django.views import View
+from django.http import JsonResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Review
 
 
 class ProductListView(FilterView):
@@ -87,33 +91,38 @@ class ProductDetailView(DetailView):
             'category'
         ).prefetch_related(
             Prefetch('images', queryset=ProductImage.objects.order_by('-is_main')),
-            Prefetch('attributes__attribute__groups'),
-            Prefetch('reviews', queryset=self.get_reviews_queryset())
+            Prefetch('attributes__attribute__groups'),  # Используйте Prefetch для groups
         )
-
-    def get_reviews_queryset(self):
-        return self.model.reviews.field.related_model.objects.filter(
-            approved=True).select_related('user')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product = self.object
 
+        # Загружаем отзывы после получения продукта
+        reviews = Review.objects.filter(
+            approved=True,
+            product=product
+        ).select_related('user')
+
         context.update({
             'grouped_attributes': self.get_grouped_attributes(product),
             'related_products': self.get_related_products(product),
             'sku': product.sku,
-            'is_digital': product.is_digital
+            'is_digital': product.is_digital,
+            'reviews': reviews,  # Передаем отзывы в контекст
         })
         return context
 
     def get_grouped_attributes(self, product):
-        attributes = product.attributes.select_related(
-            'attribute__groups'
-        ).prefetch_related('attribute__enum_options')
+        # Замените select_related на prefetch_related для ManyToMany-связи
+        attributes = product.attributes.select_related('attribute').prefetch_related(
+            'attribute__groups',  # Если groups — ManyToManyField
+            'attribute__enum_options'
+        )
 
         grouped = {}
         for attr in attributes:
+            # Используйте attribute.groups.all() для доступа к группам
             for group in attr.attribute.groups.all():
                 grouped.setdefault(group, []).append(attr)
         return sorted(grouped.items(), key=lambda x: x[0].name)
@@ -145,3 +154,24 @@ class SearchView(ListView):
         context['query'] = self.request.GET.get('q', '')
         context['result_count'] = self.get_queryset().count()
         return context
+
+
+class AddReviewView(LoginRequiredMixin, View):
+    def post(self, request, product_id):
+        product = Product.objects.get(id=product_id)
+        text = request.POST.get('text')
+        rating = request.POST.get('rating')
+
+        # Создаем отзыв
+        review = Review.objects.create(
+            user=request.user,
+            product=product,
+            text=text,
+            rating=rating,
+            approved=False  # Модерация включена
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Отзыв отправлен на модерацию.'
+        })

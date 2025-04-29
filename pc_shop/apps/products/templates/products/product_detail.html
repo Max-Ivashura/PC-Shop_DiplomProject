@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load products_extras %}
 {% load static %}
 {% load cache %}
 
@@ -185,8 +186,8 @@
 
                             <!-- Список отзывов -->
                             <div class="reviews-list mt-4">
-                                {% if product.reviews.exists %}
-                                    {% for review in product.reviews.all %}
+                                {% if reviews %}
+                                    {% for review in reviews %}
                                         <div class="review-item card mb-3" itemprop="review" itemscope
                                              itemtype="http://schema.org/Review">
                                             <div class="card-body">
@@ -249,9 +250,9 @@
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: JSON.stringify({
+                body: new URLSearchParams({
                     text: form.text.value,
                     rating: form.rating.value
                 })
@@ -275,6 +276,62 @@
                     submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Отправить';
                 });
         });
+
+        document.querySelector('.add-to-compare').addEventListener('click', function (e) {
+            e.preventDefault();
+            const productId = this.dataset.productId;
+
+            fetch(`/compare/add/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error('Ошибка сети');
+                })
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Товар добавлен в сравнение', 'success');
+                    } else {
+                        showAlert(data.error || 'Ошибка', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Ошибка сети. Проверьте подключение.', 'danger');
+                });
+        });
+
+        // Обработчик кнопки "В избранное"
+        document.querySelector('.add-to-wishlist').addEventListener('click', function (e) {
+            e.preventDefault();
+            const productId = this.dataset.productId;
+
+            fetch(`/accounts/wishlist/add/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error('Ошибка сети');
+                })
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Товар добавлен в избранное', 'success');
+                    } else {
+                        showAlert(data.error || 'Ошибка', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Ошибка сети. Проверьте подключение.', 'danger');
+                });
+        });
+
 
         function showAlert(message, type = 'success') {
             const alert = document.createElement('div');

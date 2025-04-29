@@ -119,7 +119,7 @@ class Product(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('product_detail', kwargs={'slug': self.slug})
+        return reverse('product_detail', kwargs={'product_slug': self.slug})
 
 
 class ProductImage(models.Model):
@@ -130,12 +130,6 @@ class ProductImage(models.Model):
     )
     image = models.ImageField(
         upload_to='products/gallery/',
-        validators=[
-            FileExtensionValidator(
-                allowed_extensions=['jpg', 'jpeg', 'png'],
-                message=_("Допустимые форматы: JPG, JPEG, PNG")
-            )
-        ]
     )
     is_main = models.BooleanField(_("Главное изображение"), default=False)
 

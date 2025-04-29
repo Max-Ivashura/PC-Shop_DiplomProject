@@ -23,6 +23,16 @@ urlpatterns = [
              name='api-clear'),
     ])),
 
+    path('add/<int:product_id>/',
+         views.add_to_compare,
+         name='add'),
+    path('remove/<int:product_id>/',
+         views.remove_from_compare,
+         name='remove'),
+    path('clear/',
+         views.clear_comparison,
+         name='clear'),
+
     # HTML Views
     path('actions/', include([
         path('add/<int:product_id>/',
