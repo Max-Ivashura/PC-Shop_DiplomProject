@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import ComponentType, CompatibilityRule, BuildComponent, Build
+from apps.configurator.models import ComponentType, CompatibilityRule, BuildComponent, Build
 
 
 @admin.register(ComponentType)

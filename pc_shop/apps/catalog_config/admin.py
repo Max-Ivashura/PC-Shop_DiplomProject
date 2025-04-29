@@ -6,13 +6,12 @@ from django.utils.translation import gettext_lazy as _
 from mptt.admin import DraggableMPTTAdmin
 import csv
 
-from .forms import AttributeGroupForm, AttributeForm
-from .models import (
+from apps.catalog_config.forms import AttributeGroupForm, AttributeForm
+from apps.catalog_config.models import (
     Category,
     AttributeGroup,
     Attribute,
     EnumOption,
-    ProductAttributeValue,
     AttributeGroupLink
 )
 
@@ -131,15 +130,12 @@ class AttributeGroupAdmin(DraggableMPTTAdmin):
     category_hierarchy.short_description = _('Иерархия категорий')
 
 
-class EnumOptionInline(admin.StackedInline):
+class EnumOptionInline(admin.StackedInline):  # Или TabularInline
     model = EnumOption
-    extra = 3
-    max_num = 20
+    extra = 1  # Показывать 1 пустое поле по умолчанию
+    max_num = 100  # Максимальное количество вариантов
     verbose_name = _("Вариант значения")
     verbose_name_plural = _("Варианты значений")
-
-    def get_max_num(self, request, obj=None, **kwargs):
-        return 3 if obj is None else 20
 
 
 @admin.register(Attribute)
@@ -182,8 +178,8 @@ class AttributeAdmin(DraggableMPTTAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related(
             Prefetch(
-                'groups__group__category',
-                queryset=Category.objects.only('name')
+                'attributegrouplink_set__group__category',
+                queryset=AttributeGroup.objects.select_related('category')
             )
         )
 
@@ -206,12 +202,11 @@ class AttributeAdmin(DraggableMPTTAdmin):
         return format_html(
             '<ul style="margin:0">' +
             ''.join(
-                f"<li>{g.group.category.name} → {g.group.name}</li>"
-                for g in obj.attributegrouplink_set.select_related('group__category')
+                f"<li>{link.group.category.name} → {link.group.name}</li>"
+                for link in obj.attributegrouplink_set.select_related('group__category')
             ) +
             '</ul>'
         )
-
     groups_list.short_description = _('Группы')
 
     def check_attributes_consistency(self, request, queryset):

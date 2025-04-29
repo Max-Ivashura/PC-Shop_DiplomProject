@@ -3,9 +3,7 @@ from django.contrib.admin import RelatedFieldListFilter
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Prefetch
-from .models import Product, ProductImage, Review
-from apps.catalog_config.models import ProductAttributeValue, Attribute
-from django.core.exceptions import ValidationError
+from apps.products.models import Product, ProductImage, Review, ProductAttributeValue
 import time
 
 

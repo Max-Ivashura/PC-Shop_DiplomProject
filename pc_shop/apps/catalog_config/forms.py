@@ -63,24 +63,29 @@ class AttributeForm(forms.ModelForm):
         # Скрываем ненужные поля
         if data_type != 'string':
             self.fields['validation_regex'].widget = forms.HiddenInput()
-        if data_type != 'enum':
-            self.fields['unit'].widget = forms.HiddenInput()
+        # if data_type != 'enum':
+        #     self.fields['unit'].widget = forms.HiddenInput()
 
     def clean(self):
         cleaned_data = super().clean()
         data_type = cleaned_data.get('data_type')
-        is_new = not self.instance.pk
+        is_new = not self.instance.pk  # Проверка, новый ли объект
 
-        # Для новых и существующих объектов
+        # Для типа 'enum' проверяем наличие хотя бы одного варианта
         if data_type == 'enum':
-            if is_new and not self.data.get('enum_options'):
-                raise ValidationError({
-                    'data_type': _("Для типа 'Список' необходимо добавить варианты значений")
-                })
-            elif not is_new and not self.instance.enum_options.exists():
-                raise ValidationError({
-                    'data_type': _("Добавьте варианты значений для типа 'Список'")
-                })
+            if is_new:
+                # Проверяем, были ли добавлены варианты через inline-форму
+                enum_options = self.data.get('enum_options-TOTAL_FORMS', 0)
+                if int(enum_options) < 1:
+                    raise ValidationError({
+                        'data_type': _("Для типа 'Список' необходимо добавить хотя бы один вариант значения")
+                    })
+            else:
+                # Для существующих объектов проверяем, есть ли сохраненные варианты
+                if not self.instance.enum_options.exists():
+                    raise ValidationError({
+                        'data_type': _("Добавьте варианты значений для типа 'Список'")
+                    })
 
         # Валидация уникальности через промежуточную модель
         name = cleaned_data.get('name')

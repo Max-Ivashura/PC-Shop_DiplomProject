@@ -4,7 +4,7 @@
     <facet type="django" name="Django">
       <configuration>
         <option name="rootFolder" value="$MODULE_DIR$/pc_shop" />
-        <option name="settingsModule" value="pc_shop/settings.py" />
+        <option name="settingsModule" value="config/settings.py" />
         <option name="manageScript" value="manage.py" />
         <option name="environment" value="&lt;map/&gt;" />
         <option name="doNotUseTestRunner" value="false" />
@@ -17,7 +17,7 @@
       <sourceFolder url="file://$MODULE_DIR$/pc_shop/apps" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/pc_shop/apps/catalog_config/migrations" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.13 (.globalvenv)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.13 (.venv)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TemplatesService">

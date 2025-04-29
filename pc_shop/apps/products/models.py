@@ -1,18 +1,18 @@
+import re
 from collections import defaultdict
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.contrib.auth import get_user_model
 from django.template.defaultfilters import time
 from django.utils.html import format_html
 from django.utils.text import slugify
 from django.urls import reverse
 from django.utils.functional import cached_property
-from apps.catalog_config.models import Attribute, Category as CatalogCategory
-from mptt.utils import get_cached_trees
 from sorl.thumbnail import get_thumbnail
-from django.db.models import Avg, Q, Prefetch
+from django.db.models import Avg, JSONField
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.utils.translation import gettext_lazy as _
+
+from apps.catalog_config.models import Category
 
 
 class Product(models.Model):
@@ -33,7 +33,7 @@ class Product(models.Model):
         help_text=_("Автоматически генерируется из названия")
     )
     category = models.ForeignKey(
-        CatalogCategory,
+        Category,
         on_delete=models.PROTECT,
         related_name='products',
         verbose_name=_("Категория")
@@ -208,3 +208,53 @@ class Review(models.Model):
     def clean(self):
         if not 1 <= self.rating <= 5:
             raise ValidationError(_("Рейтинг должен быть от 1 до 5"))
+
+
+class ProductAttributeValue(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name='attributes',
+        on_delete=models.CASCADE
+    )
+    attribute = models.ForeignKey(
+        'catalog_config.Attribute',
+        on_delete=models.PROTECT,
+        verbose_name=_("Атрибут")
+    )
+    value = JSONField(_("Значение"))
+
+    class Meta:
+        unique_together = ('product', 'attribute')
+        indexes = [
+            models.Index(fields=['attribute']),
+            models.Index(fields=['product']),
+        ]
+
+    def clean(self):
+        attr = self.attribute
+        val = self.value
+
+        if attr.is_required and val in (None, ''):
+            raise ValidationError(_("Значение обязательно для заполнения"))
+
+        if attr.data_type == 'string':
+            if not isinstance(val, str):
+                raise ValidationError(_("Требуется строковое значение"))
+            if attr.validation_regex and not re.match(attr.validation_regex, val):
+                raise ValidationError(_("Неверный формат строки"))
+        elif attr.data_type == 'number':
+            if not isinstance(val, (int, float)):
+                raise ValidationError(_("Требуется числовое значение"))
+        elif attr.data_type == 'boolean':
+            if isinstance(val, str):
+                val = val.lower() in ('true', '1')
+                self.value = val
+            if not isinstance(val, bool):
+                raise ValidationError(_("Требуется логическое значение"))
+        elif attr.data_type == 'enum':
+            valid_values = set(attr.enum_options.values_list('value', flat=True))
+            if val not in valid_values:
+                raise ValidationError(_("Недопустимое значение для списка"))
+
+    def __str__(self):
+        return f"{self.attribute.name}: {self.value}"

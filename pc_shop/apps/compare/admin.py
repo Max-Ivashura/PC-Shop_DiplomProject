@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
-from django.db.models import Q
 from apps.compare.models import Comparison, ComparisonItem
 from apps.catalog_config.models import Category
 
